@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>아이와 30분 만에 만드는 첫 AI 앱</title>
+<style>
+:root{--bg:#fbfaf7;--ink:#22252a;--sub:#6b6f75;--line:#ece8df;--acc:#c67e00;--code:#f3efe6}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.75 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:640px;margin:0 auto;padding:36px 18px 60px}
+h1{font-size:24px;line-height:1.4;margin:0 0 18px}
+h2{font-size:19px;margin:36px 0 10px;padding-left:10px;border-left:4px solid var(--acc)}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+pre{background:var(--code);border-radius:10px;padding:14px 16px;white-space:pre-wrap;word-break:keep-all;font-size:15px;line-height:1.6}
+code{font-family:ui-monospace,Menlo,monospace}
+p code,li code{background:var(--code);padding:1px 6px;border-radius:5px;font-size:15px}
+strong{color:#111} ul{padding-left:22px}
+footer{margin-top:44px;color:var(--sub);font-size:13px}
+</style></head><body><main>
+<h1>아이와 30분 만에 만드는 첫 AI 앱 — 구구단 게임</h1>
+<p>목표는 하나다. 아이가 "이거 되네" 하는 순간을 30분 안에 만드는 것.
+잘 만드는 건 그다음이다.</p>
+<hr />
+<h2>시작 전 3분</h2>
+<p>준비물은 두 개뿐이다. 노트북, 그리고 챗GPT(무료 계정이면 충분하다).
+설치할 것도, 계정을 새로 팔 것도 없다.</p>
+<p><strong>아이를 옆에 앉히기 전에 부모가 먼저 정할 것 하나</strong> — 오늘의 목표는
+"작동하는 것"이지 "잘 만든 것"이 아니다. 디자인이 촌스럽고 버그가 있어도
+끝까지 간다. 이 기준을 미리 정하지 않으면 30분 안에 안 끝나고, 아이는
+"또 안 됐네"로 기억한다.</p>
+<hr />
+<h2>1단계 (5분) — 뼈대 만들기</h2>
+<p>챗GPT에 이렇게 친다.</p>
+<pre><code>초등학생용 구구단 맞히기 게임을 HTML 파일 하나로 만들어줘.
+브라우저에서 바로 열리게 하고, 설명 없이 코드만 줘.
+</code></pre>
+<p>나온 코드를 복사해서 메모장에 붙여넣고 <code>gugudan.html</code> 로 저장한다.
+더블클릭하면 브라우저에서 열린다. <strong>여기까지가 5분.</strong></p>
+<p>안 열리거나 화면이 하얗다면 3단계로 건너뛰어도 된다. 에러는 실패가 아니라
+이 활동의 핵심 재료다.</p>
+<hr />
+<h2>2단계 (15분) — 여기가 진짜다</h2>
+<p>지금부터가 이 30분의 전부다. <strong>로직을 아이가 정하게 한다.</strong></p>
+<p>부모가 묻고, 아이가 답하고, 아이가 AI에게 말한다. 부모는 타이핑만 도와준다.</p>
+<p>이 다섯 가지를 순서대로 물어본다. 답은 전부 아이가 정한다.</p>
+<ul>
+<li><strong>"문제 몇 개 낼까?"</strong> → 문제 수</li>
+<li><strong>"틀리면 어떻게 할까?"</strong> → 오답 처리 방식</li>
+<li><strong>"몇 단까지 낼까?"</strong> → 난이도 범위</li>
+<li><strong>"다 맞히면 뭐라고 나올까?"</strong> → 완료 조건과 보상</li>
+<li><strong>"시간 제한 둘까?"</strong> → 규칙 추가</li>
+</ul>
+<p>아이의 답을 그대로 AI에게 전달한다.</p>
+<pre><code>문제는 5개만 내줘.
+틀리면 정답 알려주지 말고 다시 풀게 해줘.
+5개 다 맞히면 &quot;잘했어!&quot; 라고 크게 띄워줘.
+</code></pre>
+<p><strong>부모가 대신 정해주지 않는 게 전부다.</strong> "5개는 너무 적지 않아?" 라고
+말하는 순간 아이 프로젝트가 부모 프로젝트가 된다. 그냥 5개로 만들고,
+아이가 직접 적다고 느끼면 그때 고치면 된다. 그 판단까지가 학습이다.</p>
+<hr />
+<h2>3단계 (7분) — 에러가 나면</h2>
+<p>여기서 부모가 대신 고쳐주면 이 활동의 가치가 절반으로 준다.</p>
+<p>에러 메시지를 아이가 직접 복사해서 AI에게 붙여넣게 한다.</p>
+<pre><code>이렇게 나왔어. 왜 안 돼?
+[에러 메시지 붙여넣기]
+</code></pre>
+<p>부모는 딱 하나만 한다 — <strong>"여기 뭐라고 써 있어?"</strong> 하고 화면을 같이 본다.
+읽고, 옮기고, 다시 물어보는 이 루프가 사실상 디버깅의 전부이고,
+아이가 앞으로 AI를 쓸 때 계속 쓰게 될 유일한 기술이다.</p>
+<hr />
+<h2>4단계 (5분) — 보여주기까지가 프로젝트</h2>
+<p>완성되면 형제나 친구, 조부모에게 보여주게 한다. 화면을 넘겨주고
+"내가 만든 거야" 라고 말하는 순간이 이 30분에서 아이에게 남는 부분이다.</p>
+<p>여기까지 하면 끝이다.</p>
+<hr />
+<h2>자주 막히는 곳</h2>
+<p><strong>"코드가 너무 길어서 복사가 안 돼요"</strong>
+→ "한 파일로, 200줄 이내로 짧게 만들어줘" 를 추가한다.</p>
+<p><strong>"아이가 금방 지루해해요"</strong>
+→ 2단계에서 부모가 너무 많이 말하고 있을 가능성이 높다. 질문만 던지고
+입을 다무는 시간을 늘린다.</p>
+<p><strong>"기능을 자꾸 더 넣자고 해요"</strong>
+→ 좋은 신호다. 다만 오늘은 적고, 다음에 할 목록으로 종이에 적어둔다.
+로그인·저장 기능은 30분 안에 안 끝난다.</p>
+<p><strong>"AI가 만든 걸 그냥 받기만 해요"</strong>
+→ 2단계 표의 질문을 한 개씩 천천히 다시 한다. 아이가 답하기 전에
+부모가 답을 말하지 않는 것이 유일한 처방이다.</p>
+<hr />
+<h2>왜 이 순서인가</h2>
+<p>핵심은 <strong>AI를 소비 도구가 아니라 제작 도구로 쓰게 하는 것</strong>이다.</p>
+<p>같은 챗GPT라도 "숙제 답 알려줘"로 쓰면 대신 해주는 기계가 되고,
+"내가 정한 걸 만들어줘"로 쓰면 도구가 된다. 2단계에서 로직을 아이가
+정하게 하는 이유가 여기 있다.</p>
+<p>해외에서는 청소년의 AI 과의존이 기본기 형성을 막는다는 우려
+(이른바 <em>never-skilling</em>)가 제기되고 있고, 국내에서도 AI 시민성 교육
+논의가 시작되는 중이다. 어느 쪽이든 공통점은 <strong>쓰느냐 마느냐가 아니라
+어떻게 쓰게 하느냐가 갈림길</strong>이라는 것이다.</p>
+<p>다만 분명히 해둘 것 — 이 30분이 코딩 실력이나 성적으로 이어진다는
+근거는 없다. 여기서 얻는 것은 "내가 시켜서 뭔가가 만들어졌다"는 감각
+하나이고, 그 이상을 약속하는 자료는 의심하는 게 맞다.</p>
+<hr />
+<h2>다음 단계</h2>
+<p>이 활동이 잘 맞았다면 같은 방식으로 확장할 수 있는 것들:</p>
+<ul>
+<li>용돈 계산기 (숫자 다루기 + 조건 넣기)</li>
+<li>학급 시간표 앱 (데이터 구조)</li>
+<li>영어 단어 퀴즈 (아이가 직접 단어 목록 정하기)</li>
+</ul>
+<p>각각 30분 안에 끝나도록 잘라 쓰는 게 중요하다. 한 번에 크게 만들려고
+하면 예외 없이 중간에 무너진다.</p>
+<footer>@hi_jun_baby · AI 육아 교육</footer>
+</main></body></html>
