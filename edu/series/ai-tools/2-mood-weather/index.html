@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2회 오늘의 기분 날씨 카드 — 아이랑 AI로 만드는 툴</title>
+<style>
+:root{--bg:#f7f6f3;--card:#fff;--ink:#22252a;--sub:#6b6f75;--line:#e8e4dc;--acc:#c67e00;--accbg:#fbf3e4;--code:#f4f1ea}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:620px;margin:0 auto;padding:22px 16px 48px}
+.crumb{font-size:13px;margin-bottom:6px}.crumb a{color:var(--sub)}
+h1{font-size:22px;line-height:1.4;margin:0 0 6px}
+.lead{color:var(--sub);font-size:15px;margin:0 0 16px}
+h2{font-size:18px;margin:30px 0 10px;padding-left:10px;border-left:4px solid var(--acc)}
+h3{font-size:16px;margin:18px 0 8px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--acc);background:var(--accbg);border-radius:6px;padding:2px 8px;margin-bottom:8px}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+.btn{all:unset;box-sizing:border-box;display:inline-block;text-align:center;padding:11px 16px;border-radius:10px;background:var(--acc);color:#fff;font-weight:700;cursor:pointer}
+.btn.o{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.btn.s{padding:7px 12px;font-size:14px}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row{display:flex;gap:8px;margin-bottom:8px}.row>*{flex:1}
+.muted{color:var(--sub);font-size:13px}
+ol.q,ul.q{padding-left:22px;margin:6px 0}ol.q li,ul.q li{margin-bottom:6px}
+.prompt{position:relative;background:var(--code);border-radius:10px;padding:14px 14px 54px;margin:8px 0 14px}
+.prompt pre{margin:0;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font:14px/1.6 ui-monospace,Menlo,"Apple SD Gothic Neo",monospace}
+.prompt .btn{position:absolute;right:10px;bottom:10px}
+table.tt{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.tt td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tt td:first-child{width:86px;font-weight:700;color:var(--acc);white-space:nowrap}
+.safe{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--sub);margin-top:22px}
+footer{margin-top:28px;color:var(--sub);font-size:12px;line-height:1.6}
+.handle{color:var(--acc);font-weight:700;font-size:14px}
+[hidden]{display:none!important}
+</style></head><body><main>
+<div class="crumb"><a href="../">아이랑 AI로 만드는 툴</a> · 2회</div>
+<h1>오늘의 기분 날씨 카드</h1>
+<p class="lead">오늘 기분을 날씨로 고르고 한 줄을 붙이면 카드가 되고, 일주일 기록이 쌓여요. 위에서 먼저 써 보고, 아래 순서대로 아이와 같이 만들어 보세요.</p>
+<div class="tool"><span class="tag">완성본 써 보기</span>
+<style>
+.ws{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.w{all:unset;box-sizing:border-box;text-align:center;border:1px solid var(--line);border-radius:10px;padding:6px 2px;cursor:pointer;font-size:12px;background:#fff}
+.w svg{width:100%;max-width:44px;height:auto;display:block;margin:0 auto}
+.w[aria-pressed=true]{border:2px solid var(--acc);background:var(--accbg)}
+.cardp{border-radius:16px;padding:18px;margin:12px 0;border:1px solid var(--line);text-align:center}
+.cardp svg{width:96px;height:96px}
+.cardp .d{color:var(--sub);font-size:13px}.cardp .t{font-size:20px;font-weight:700;margin:4px 0}.cardp .l{font-size:16px;word-break:keep-all;overflow-wrap:anywhere;min-height:1.6em}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.week div{border:1px solid var(--line);border-radius:8px;text-align:center;font-size:11px;color:var(--sub);padding:4px 0;background:#fff}
+.week svg{width:28px;height:28px;display:block;margin:2px auto}
+</style>
+<p style="margin:0 0 8px;font-weight:600">오늘 기분은 어떤 날씨야?</p>
+<div class="ws" id="ws"><button class="w" data-w="sun" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="12" fill="#f2b705"/><g stroke="#f2b705" stroke-width="4" stroke-linecap="round"><path d="M32 6v8M32 50v8M6 32h8M50 32h8M13.6 13.6l5.6 5.6M44.8 44.8l5.6 5.6M13.6 50.4l5.6-5.6M44.8 19.2l5.6-5.6"/></g></svg><span>맑음</span></button><button class="w" data-w="cloud" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="22" cy="21" r="8" fill="#f2b705"/><path d="M18 50h30a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-3 22z" fill="#c9ced6"/></svg><span>구름 조금</span></button><button class="w" data-w="rain" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 38h32a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-5 22z" fill="#9aa4b2"/><g stroke="#3d7bd9" stroke-width="4" stroke-linecap="round"><path d="M22 44l-3 8M34 44l-3 8M46 44l-3 8"/></g></svg><span>비</span></button><button class="w" data-w="storm" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 36h32a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-5 22z" fill="#6f7886"/><path d="M34 36l-8 12h7l-4 11 12-15h-7l4-8z" fill="#f2b705"/></svg><span>천둥</span></button><button class="w" data-w="rainbow" aria-pressed="false"><svg viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke-width="5"><path d="M8 48a24 24 0 0 1 48 0" stroke="#e5484d"/><path d="M14 48a18 18 0 0 1 36 0" stroke="#f2b705"/><path d="M20 48a12 12 0 0 1 24 0" stroke="#30a46c"/><path d="M26 48a6 6 0 0 1 12 0" stroke="#3d7bd9"/></g></svg><span>무지개</span></button></div>
+<input id="line" maxlength="40" placeholder="한 줄 (선택) — 오늘 제일 기억나는 일">
+<div class="cardp" id="card"><div class="d" id="cd"></div><div id="ci"></div><div class="t" id="ct">날씨를 골라 주세요</div><div class="l" id="cl"></div></div>
+<div class="row"><button class="btn" id="keep">오늘 카드로 남기기</button><button class="btn o" id="clear">기록 지우기</button></div>
+<p style="margin:14px 0 0;font-weight:600">최근 7일</p>
+<div class="week" id="week"></div>
+</div>
+<h2>아이랑 만드는 순서</h2>
+<h3>1. 아이가 정할 질문</h3>
+<p class="muted">답은 아이가 정하고, 부모는 받아 적기만 합니다. 정한 답을 아래 프롬프트의 [ ] 자리에 넣어요.</p>
+<ol class="q"><li>기분을 몇 가지 날씨로 나눌까? 각각 어떤 기분이야?</li><li>날씨마다 카드 바탕색은 무슨 색이 좋을까?</li><li>카드에 한 줄을 쓸 수 있게 할까? 몇 글자까지?</li><li>일주일이 다 차면 화면에 뭐라고 보여 줄까?</li></ol>
+<h3>2. 챗GPT 등에 붙여 넣을 프롬프트</h3>
+<div class="prompt"><pre id="p2">초등학생이 쓰는 &#x27;오늘의 기분 날씨 카드&#x27;를 HTML 파일 하나로 만들어 줘. 브라우저에서 바로 열리게 하고, 설명 없이 코드만 줘.
+
+기능:
+1. 기분을 날씨로 고른다: [날씨1=기분], [날씨2=기분], [날씨3=기분], [날씨4=기분]
+2. 날씨 그림은 이모지 말고 SVG로 간단하게 그려 줘.
+3. 고르면 오늘 날짜와 함께 카드가 나오고, 바탕색은 [날씨별 색]으로 한다.
+4. 카드에 한 줄을 [글자 수]자까지 쓸 수 있다.
+5. &#x27;남기기&#x27;를 누르면 최근 7일 칸에 그날 날씨 그림이 쌓인다. 7일이 다 차면 &quot;[아이가 정한 말]&quot;을 보여 준다.
+6. 기록은 이 브라우저에만 저장(localStorage)하고, 이름·학교 같은 개인정보는 받지 마.</pre><button class="btn s" data-copy="p2">복사</button></div>
+<h3>3. 에러가 나면 이렇게 물어보기</h3>
+<div class="prompt"><pre id="p2e0">날짜가 하루씩 밀려서 나와. 한국 시간 기준으로 오늘 날짜가 나오게 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p2e0">복사</button></div>
+<div class="prompt"><pre id="p2e1">화면이 하얗게 나오고 아무것도 안 보여. 코드 전체를 다시 확인해서 HTML 파일 하나로, 처음부터 끝까지 빠짐없이 다시 써 줘.</pre><button class="btn s" data-copy="p2e1">복사</button></div>
+<div class="prompt"><pre id="p2e2">버튼을 눌러도 아무 일이 안 일어나. 왜 그런지 초등학생도 알 수 있게 한 줄로 설명하고, 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p2e2">복사</button></div>
+<h3>4. 30분 시간표</h3>
+<table class="tt"><tr><td>0~5분</td><td>완성본에서 오늘 날씨를 하나 골라 보고, 우리 집 날씨 종류를 정한다.</td></tr><tr><td>5~12분</td><td>질문 4개에 아이가 답하고 프롬프트 [ ]를 채운다.</td></tr><tr><td>12~20분</td><td>챗GPT에 붙여 넣고 mood.html 로 저장해 연다.</td></tr><tr><td>20~27분</td><td>색이나 그림이 마음에 안 드는 곳 하나를 아이 말로 고쳐 달라고 한다.</td></tr><tr><td>27~30분</td><td>오늘 카드를 하나 남기고, 내일 또 열어 볼 시간을 정한다.</td></tr></table>
+
+<div class="safe">이 페이지는 아이 개인정보를 받지 않습니다. 기록은 지금 쓰는 기기의 브라우저에만 남고, 브라우저 기록을 지우면 함께 사라져요. 챗GPT에도 아이 이름·학교·사진은 넣지 않는 걸 권합니다.</div>
+<footer><div class="handle">@hi_jun_baby</div>기준일 2026-11-16 · 출처: 직접 만든 예시 도구와 프롬프트(외부 자료 인용 없음)<br>아이 이름·사진·학교 같은 개인정보는 받지도 저장하지도 않습니다. 저장은 이 기기 브라우저 안에만 되고, 학습·발달 효과를 약속하지 않습니다.</footer>
+</main>
+<script>function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+var SV={"sun": "<circle cx=\"32\" cy=\"32\" r=\"12\" fill=\"#f2b705\"/><g stroke=\"#f2b705\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M32 6v8M32 50v8M6 32h8M50 32h8M13.6 13.6l5.6 5.6M44.8 44.8l5.6 5.6M13.6 50.4l5.6-5.6M44.8 19.2l5.6-5.6\"/></g>", "cloud": "<circle cx=\"22\" cy=\"21\" r=\"8\" fill=\"#f2b705\"/><path d=\"M18 50h30a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-3 22z\" fill=\"#c9ced6\"/>", "rain": "<path d=\"M16 38h32a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-5 22z\" fill=\"#9aa4b2\"/><g stroke=\"#3d7bd9\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M22 44l-3 8M34 44l-3 8M46 44l-3 8\"/></g>", "storm": "<path d=\"M16 36h32a10 10 0 0 0 0-20 14 14 0 0 0-27-2 11 11 0 0 0-5 22z\" fill=\"#6f7886\"/><path d=\"M34 36l-8 12h7l-4 11 12-15h-7l4-8z\" fill=\"#f2b705\"/>", "rainbow": "<g fill=\"none\" stroke-width=\"5\"><path d=\"M8 48a24 24 0 0 1 48 0\" stroke=\"#e5484d\"/><path d=\"M14 48a18 18 0 0 1 36 0\" stroke=\"#f2b705\"/><path d=\"M20 48a12 12 0 0 1 24 0\" stroke=\"#30a46c\"/><path d=\"M26 48a6 6 0 0 1 12 0\" stroke=\"#3d7bd9\"/></g>"},W={"sun": ["맑음", "기분 최고", "#fff6d6"], "cloud": ["구름 조금", "그냥 그래", "#f1f2f4"], "rain": ["비", "조금 속상해", "#e6eefb"], "storm": ["천둥", "화가 났어", "#ecebef"], "rainbow": ["무지개", "속상했다가 괜찮아졌어", "#f3eefb"]};
+var K="aitools-mood",D=load(K,{}),cur=null;
+function svg(k,s){return '<svg viewBox="0 0 64 64" width="'+s+'" height="'+s+'" aria-hidden="true">'+SV[k]+'</svg>'}
+function card(){var t=today(),l=document.getElementById("line").value.trim();
+ document.getElementById("cd").textContent=t.replace(/-/g,". ");
+ if(!cur){document.getElementById("ci").innerHTML="";document.getElementById("ct").textContent="날씨를 골라 주세요";document.getElementById("card").style.background="#fff";document.getElementById("cl").textContent="";return}
+ document.getElementById("ci").innerHTML=svg(cur,96);document.getElementById("ct").textContent=W[cur][0]+" · "+W[cur][1];
+ document.getElementById("cl").textContent=l;document.getElementById("card").style.background=W[cur][2];}
+document.getElementById("ws").addEventListener("click",function(e){var b=e.target.closest(".w");if(!b)return;cur=b.dataset.w;
+ Array.prototype.forEach.call(this.children,function(x){x.setAttribute("aria-pressed",x===b)});card()});
+document.getElementById("line").oninput=card;
+document.getElementById("keep").onclick=function(){if(!cur){alert("먼저 날씨를 골라 주세요.");return}D[today()]={w:cur,l:document.getElementById("line").value.trim()};save(K,D);week();this.textContent="남겼어요";var b=this;setTimeout(function(){b.textContent="오늘 카드로 남기기"},1500)};
+document.getElementById("clear").onclick=function(){if(confirm("이 기기에 남긴 기분 기록을 모두 지울까요?")){D={};save(K,D);week()}};
+function week(){var h="",d=new Date();for(var i=6;i>=0;i--){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate()-i),k=x.getFullYear()+"-"+("0"+(x.getMonth()+1)).slice(-2)+"-"+("0"+x.getDate()).slice(-2),r=D[k];
+ h+='<div title="'+(r?esc(r.l||W[r.w][0]):"")+'">'+(x.getMonth()+1)+"/"+x.getDate()+(r?svg(r.w,28):'<svg viewBox="0 0 64 64" width="28" height="28"><circle cx="32" cy="32" r="6" fill="#e8e4dc"/></svg>')+"</div>"}
+ document.getElementById("week").innerHTML=h;}
+var t0=D[today()];if(t0){cur=t0.w;document.getElementById("line").value=t0.l||"";var b=document.querySelector('.w[data-w="'+cur+'"]');if(b)b.setAttribute("aria-pressed","true")}
+card();week();
+</script>
+<script>
+document.addEventListener("click",function(e){var b=e.target.closest("[data-copy]");if(!b)return;var t=document.getElementById(b.dataset.copy).innerText;
+function ok(){var o=b.textContent;b.textContent="복사했어요";setTimeout(function(){b.textContent=o},1500)}
+function fb(){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(_){}a.remove()}
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()});
+</script>
+</body></html>

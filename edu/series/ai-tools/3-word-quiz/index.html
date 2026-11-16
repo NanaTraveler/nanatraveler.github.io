@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3회 영어 단어 퀴즈 — 아이랑 AI로 만드는 툴</title>
+<style>
+:root{--bg:#f7f6f3;--card:#fff;--ink:#22252a;--sub:#6b6f75;--line:#e8e4dc;--acc:#c67e00;--accbg:#fbf3e4;--code:#f4f1ea}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:620px;margin:0 auto;padding:22px 16px 48px}
+.crumb{font-size:13px;margin-bottom:6px}.crumb a{color:var(--sub)}
+h1{font-size:22px;line-height:1.4;margin:0 0 6px}
+.lead{color:var(--sub);font-size:15px;margin:0 0 16px}
+h2{font-size:18px;margin:30px 0 10px;padding-left:10px;border-left:4px solid var(--acc)}
+h3{font-size:16px;margin:18px 0 8px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--acc);background:var(--accbg);border-radius:6px;padding:2px 8px;margin-bottom:8px}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+.btn{all:unset;box-sizing:border-box;display:inline-block;text-align:center;padding:11px 16px;border-radius:10px;background:var(--acc);color:#fff;font-weight:700;cursor:pointer}
+.btn.o{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.btn.s{padding:7px 12px;font-size:14px}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row{display:flex;gap:8px;margin-bottom:8px}.row>*{flex:1}
+.muted{color:var(--sub);font-size:13px}
+ol.q,ul.q{padding-left:22px;margin:6px 0}ol.q li,ul.q li{margin-bottom:6px}
+.prompt{position:relative;background:var(--code);border-radius:10px;padding:14px 14px 54px;margin:8px 0 14px}
+.prompt pre{margin:0;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font:14px/1.6 ui-monospace,Menlo,"Apple SD Gothic Neo",monospace}
+.prompt .btn{position:absolute;right:10px;bottom:10px}
+table.tt{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.tt td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tt td:first-child{width:86px;font-weight:700;color:var(--acc);white-space:nowrap}
+.safe{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--sub);margin-top:22px}
+footer{margin-top:28px;color:var(--sub);font-size:12px;line-height:1.6}
+.handle{color:var(--acc);font-weight:700;font-size:14px}
+[hidden]{display:none!important}
+</style></head><body><main>
+<div class="crumb"><a href="../">아이랑 AI로 만드는 툴</a> · 3회</div>
+<h1>영어 단어 퀴즈</h1>
+<p class="lead">4지선다로 10문제. 틀린 단어만 모아 다시 풀고, 우리 집 단어를 직접 넣을 수 있어요. 위에서 먼저 써 보고, 아래 순서대로 아이와 같이 만들어 보세요.</p>
+<div class="tool"><span class="tag">완성본 써 보기</span>
+<style>
+.qbox{text-align:center;padding:6px 0 4px}
+.qn{color:var(--sub);font-size:13px}.qw{font-size:30px;font-weight:800;margin:6px 0 12px;word-break:break-word}
+.ch{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ch button{all:unset;box-sizing:border-box;text-align:center;border:1px solid var(--line);border-radius:10px;padding:13px 6px;cursor:pointer;font-weight:600;background:#fff;word-break:keep-all}
+.ch button.ok{background:#e4f4ea;border-color:#30a46c}.ch button.no{background:#fde8e8;border-color:#e5484d}
+.fb{min-height:1.6em;margin:10px 0 0;font-weight:600}
+.done{text-align:center}.done b{font-size:34px;color:var(--acc)}
+.mine{margin-top:16px;border-top:1px dashed var(--line);padding-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips span{font-size:13px;background:var(--code);border-radius:999px;padding:3px 10px}
+.chips button{all:unset;cursor:pointer;color:var(--sub);margin-left:4px}
+.mode{display:flex;gap:6px;margin-bottom:10px}
+.mode button{all:unset;flex:1;text-align:center;border:1px solid var(--line);border-radius:999px;padding:6px;font-size:13px;cursor:pointer;background:#fff}
+.mode button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+</style>
+<div class="mode" id="mode"><button data-m="en" aria-pressed="true">영어 보고 뜻 고르기</button><button data-m="ko" aria-pressed="false">뜻 보고 영어 고르기</button></div>
+<div id="quiz"><div class="qbox"><div class="qn" id="qn"></div><div class="qw" id="qw"></div></div><div class="ch" id="ch"></div><div class="fb" id="fb"></div></div>
+<div id="done" class="done" hidden><p style="margin:0" id="ofn"></p><b id="score"></b><p id="msg" style="margin:4px 0 10px"></p><div id="wrong" class="muted"></div>
+<div class="row" style="margin-top:12px"><button class="btn" id="re">다시 풀기</button><button class="btn o" id="reWrong">틀린 것만</button></div></div>
+<div class="mine"><p style="margin:0 0 6px;font-weight:600">우리 집 단어 넣기</p>
+<div class="row"><input id="en" maxlength="24" placeholder="영어 (예: cat)" autocapitalize="off"><input id="ko" maxlength="16" placeholder="뜻 (예: 고양이)"></div>
+<button class="btn s" id="addw">단어 추가</button> <span class="muted">넣은 단어도 문제에 섞여 나와요.</span>
+<div class="chips" id="myw"></div></div>
+</div>
+<h2>아이랑 만드는 순서</h2>
+<h3>1. 아이가 정할 질문</h3>
+<p class="muted">답은 아이가 정하고, 부모는 받아 적기만 합니다. 정한 답을 아래 프롬프트의 [ ] 자리에 넣어요.</p>
+<ol class="q"><li>문제는 몇 개 낼까? 영어를 보고 뜻을 고를까, 뜻을 보고 영어를 고를까?</li><li>보기는 몇 개가 좋을까?</li><li>틀리면 어떻게 할까? (정답 보여 주기 / 다시 풀기)</li><li>어떤 단어 10개로 시작할까? (요즘 배우는 단어나 좋아하는 것)</li><li>다 맞히면 화면에 뭐라고 나올까?</li></ol>
+<h3>2. 챗GPT 등에 붙여 넣을 프롬프트</h3>
+<div class="prompt"><pre id="p3">초등학생이 쓰는 &#x27;영어 단어 퀴즈&#x27;를 HTML 파일 하나로 만들어 줘. 브라우저에서 바로 열리게 하고, 설명 없이 코드만 줘.
+
+기능:
+1. 단어 목록: [영어=뜻, 영어=뜻, ... 10개]
+2. 문제는 [개수]개, [영어 보고 뜻 고르기 / 뜻 보고 영어 고르기] 방식이다.
+3. 보기는 [개수]개이고, 오답 보기는 단어 목록에서 섞어서 만든다.
+4. 틀리면 [아이가 정한 방법]으로 한다.
+5. 끝나면 점수와 틀린 단어를 보여 주고, &#x27;틀린 것만 다시&#x27; 버튼을 만든다.
+6. 다 맞히면 &quot;[아이가 정한 말]&quot;을 크게 띄운다.
+7. 단어를 직접 추가할 수 있게 하고, 이 브라우저에만 저장(localStorage)해 줘. 개인정보는 받지 마.</pre><button class="btn s" data-copy="p3">복사</button></div>
+<h3>3. 에러가 나면 이렇게 물어보기</h3>
+<div class="prompt"><pre id="p3e0">보기에 같은 뜻이 두 번 나와. 보기가 겹치지 않게 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p3e0">복사</button></div>
+<div class="prompt"><pre id="p3e1">화면이 하얗게 나오고 아무것도 안 보여. 코드 전체를 다시 확인해서 HTML 파일 하나로, 처음부터 끝까지 빠짐없이 다시 써 줘.</pre><button class="btn s" data-copy="p3e1">복사</button></div>
+<div class="prompt"><pre id="p3e2">버튼을 눌러도 아무 일이 안 일어나. 왜 그런지 초등학생도 알 수 있게 한 줄로 설명하고, 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p3e2">복사</button></div>
+<h3>4. 30분 시간표</h3>
+<table class="tt"><tr><td>0~5분</td><td>완성본을 한 판 풀어 보고, 우리 단어 10개를 아이가 고른다.</td></tr><tr><td>5~12분</td><td>질문 5개에 답하고 프롬프트 [ ]를 채운다.</td></tr><tr><td>12~20분</td><td>챗GPT에 붙여 넣고 quiz.html 로 저장해 연다.</td></tr><tr><td>20~27분</td><td>부모가 한 판 풀어 보고, 아이가 이상한 점 하나를 에러 문장으로 고친다.</td></tr><tr><td>27~30분</td><td>가족 중 한 명에게 문제를 내 보게 하고 끝.</td></tr></table>
+
+<div class="safe">이 페이지는 아이 개인정보를 받지 않습니다. 기록은 지금 쓰는 기기의 브라우저에만 남고, 브라우저 기록을 지우면 함께 사라져요. 챗GPT에도 아이 이름·학교·사진은 넣지 않는 걸 권합니다.</div>
+<footer><div class="handle">@hi_jun_baby</div>기준일 2026-11-16 · 출처: 직접 만든 예시 도구와 프롬프트(외부 자료 인용 없음)<br>아이 이름·사진·학교 같은 개인정보는 받지도 저장하지도 않습니다. 저장은 이 기기 브라우저 안에만 되고, 학습·발달 효과를 약속하지 않습니다.</footer>
+</main>
+<script>function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+var BASE=[["apple", "사과"], ["book", "책"], ["chair", "의자"], ["dog", "개"], ["egg", "달걀"], ["fish", "물고기"], ["green", "초록색"], ["house", "집"], ["milk", "우유"], ["rain", "비"], ["school bag", "책가방"], ["sun", "해"], ["tree", "나무"], ["water", "물"], ["window", "창문"], ["rabbit", "토끼"], ["pencil", "연필"], ["happy", "행복한"], ["run", "달리다"], ["small", "작은"]],K="aitools-words",MY=load(K,[]),mode="en",Q=[],qi=0,sc=0,wrong=[],lock=false;
+function pool(){return BASE.concat(MY)}
+function shuf(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function begin(list){var p=list&&list.length?list:pool();Q=shuf(p).slice(0,Math.min(10,p.length));qi=0;sc=0;wrong=[];
+ document.getElementById("quiz").hidden=false;document.getElementById("done").hidden=true;ask()}
+function ask(){lock=false;var w=Q[qi],a=mode==="en"?1:0,s=mode==="en"?0:1;
+ document.getElementById("qn").textContent=(qi+1)+" / "+Q.length;document.getElementById("qw").textContent=w[s];document.getElementById("fb").textContent="";
+ var opts=[w[a]];shuf(pool()).forEach(function(x){if(opts.length<4&&opts.indexOf(x[a])<0)opts.push(x[a])});
+ document.getElementById("ch").innerHTML=shuf(opts).map(function(o){return '<button>'+esc(o)+'</button>'}).join("")}
+document.getElementById("ch").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||lock)return;lock=true;var w=Q[qi],ans=w[mode==="en"?1:0];
+ var good=b.textContent===ans;if(good)sc++;else wrong.push(w);
+ Array.prototype.forEach.call(this.children,function(x){if(x.textContent===ans)x.className="ok";else if(x===b)x.className="no"});
+ document.getElementById("fb").textContent=good?"맞았어요!":"정답은 '"+ans+"'";
+ setTimeout(function(){qi++;if(qi<Q.length)ask();else fin()},good?700:1400)});
+function fin(){document.getElementById("quiz").hidden=true;document.getElementById("done").hidden=false;
+ document.getElementById("ofn").textContent=Q.length+"문제 중";document.getElementById("score").textContent=sc+"개";document.getElementById("msg").textContent=sc===Q.length?"다 맞혔어요!":sc>=7?"거의 다 왔어요.":"틀린 것만 다시 풀어 볼까요?";
+ document.getElementById("wrong").innerHTML=wrong.length?"틀린 단어: "+wrong.map(function(w){return esc(w[0])+" = "+esc(w[1])}).join(", "):"";
+ document.getElementById("reWrong").hidden=!wrong.length}
+document.getElementById("re").onclick=function(){begin()};
+document.getElementById("reWrong").onclick=function(){begin(wrong.slice())};
+document.getElementById("mode").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;mode=b.dataset.m;
+ Array.prototype.forEach.call(this.children,function(x){x.setAttribute("aria-pressed",x===b)});begin()});
+function myw(){document.getElementById("myw").innerHTML=MY.map(function(w,i){return '<span>'+esc(w[0])+' = '+esc(w[1])+'<button data-i="'+i+'" aria-label="지우기">×</button></span>'}).join("")}
+document.getElementById("myw").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;MY.splice(+b.dataset.i,1);save(K,MY);myw()});
+document.getElementById("addw").onclick=function(){var en=document.getElementById("en").value.trim(),ko=document.getElementById("ko").value.trim();if(!en||!ko){alert("영어와 뜻을 모두 적어 주세요.");return}
+ if(pool().some(function(w){return w[0].toLowerCase()===en.toLowerCase()})){alert("이미 있는 단어예요.");return}
+ MY.push([en,ko]);save(K,MY);document.getElementById("en").value="";document.getElementById("ko").value="";myw()};
+myw();begin();
+</script>
+<script>
+document.addEventListener("click",function(e){var b=e.target.closest("[data-copy]");if(!b)return;var t=document.getElementById(b.dataset.copy).innerText;
+function ok(){var o=b.textContent;b.textContent="복사했어요";setTimeout(function(){b.textContent=o},1500)}
+function fb(){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(_){}a.remove()}
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()});
+</script>
+</body></html>

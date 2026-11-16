@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1회 용돈 기록장 — 아이랑 AI로 만드는 툴</title>
+<style>
+:root{--bg:#f7f6f3;--card:#fff;--ink:#22252a;--sub:#6b6f75;--line:#e8e4dc;--acc:#c67e00;--accbg:#fbf3e4;--code:#f4f1ea}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-text-size-adjust:100%}
+main{max-width:620px;margin:0 auto;padding:22px 16px 48px}
+.crumb{font-size:13px;margin-bottom:6px}.crumb a{color:var(--sub)}
+h1{font-size:22px;line-height:1.4;margin:0 0 6px}
+.lead{color:var(--sub);font-size:15px;margin:0 0 16px}
+h2{font-size:18px;margin:30px 0 10px;padding-left:10px;border-left:4px solid var(--acc)}
+h3{font-size:16px;margin:18px 0 8px}
+.tool{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.tag{display:inline-block;font-size:12px;font-weight:700;color:var(--acc);background:var(--accbg);border-radius:6px;padding:2px 8px;margin-bottom:8px}
+input,select{font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);width:100%;min-width:0}
+input:focus,select:focus{outline:2px solid var(--acc);border-color:transparent}
+.btn{all:unset;box-sizing:border-box;display:inline-block;text-align:center;padding:11px 16px;border-radius:10px;background:var(--acc);color:#fff;font-weight:700;cursor:pointer}
+.btn.o{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.btn.s{padding:7px 12px;font-size:14px}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row{display:flex;gap:8px;margin-bottom:8px}.row>*{flex:1}
+.muted{color:var(--sub);font-size:13px}
+ol.q,ul.q{padding-left:22px;margin:6px 0}ol.q li,ul.q li{margin-bottom:6px}
+.prompt{position:relative;background:var(--code);border-radius:10px;padding:14px 14px 54px;margin:8px 0 14px}
+.prompt pre{margin:0;white-space:pre-wrap;word-break:keep-all;overflow-wrap:anywhere;font:14px/1.6 ui-monospace,Menlo,"Apple SD Gothic Neo",monospace}
+.prompt .btn{position:absolute;right:10px;bottom:10px}
+table.tt{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.tt td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.tt td:first-child{width:86px;font-weight:700;color:var(--acc);white-space:nowrap}
+.safe{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--sub);margin-top:22px}
+footer{margin-top:28px;color:var(--sub);font-size:12px;line-height:1.6}
+.handle{color:var(--acc);font-weight:700;font-size:14px}
+[hidden]{display:none!important}
+</style></head><body><main>
+<div class="crumb"><a href="../">아이랑 AI로 만드는 툴</a> · 1회</div>
+<h1>용돈 기록장</h1>
+<p class="lead">받은 돈·쓴 돈을 적으면 남은 돈과 목표까지 남은 금액이 바로 나와요. 위에서 먼저 써 보고, 아래 순서대로 아이와 같이 만들어 보세요.</p>
+<div class="tool"><span class="tag">완성본 써 보기</span>
+<style>
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 12px}
+.sum div{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.sum small{display:block;color:var(--sub);font-size:12px}.sum b{font-size:17px;font-variant-numeric:tabular-nums}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.seg button{all:unset;flex:1;text-align:center;padding:9px;cursor:pointer;font-weight:600;color:var(--sub)}
+.seg button[aria-pressed=true]{background:var(--acc);color:#fff}
+.goal{margin:12px 0}.bar{height:12px;background:var(--code);border-radius:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+ul.items{list-style:none;padding:0;margin:8px 0 0}
+ul.items li{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:15px}
+ul.items .d{color:var(--sub);font-size:12px;width:44px;flex:none}
+ul.items .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ul.items .m{font-weight:700;font-variant-numeric:tabular-nums}.in{color:#1f7a3a}.out{color:#b42318}
+ul.items button{all:unset;color:var(--sub);cursor:pointer;padding:2px 6px;font-size:13px}
+</style>
+<div class="sum"><div><small>남은 돈</small><b id="bal">0원</b></div><div><small>이번 달 받은 돈</small><b id="mIn">0원</b></div><div><small>이번 달 쓴 돈</small><b id="mOut">0원</b></div></div>
+<div class="seg" role="group" aria-label="구분"><button data-k="in" aria-pressed="true">받은 돈</button><button data-k="out" aria-pressed="false">쓴 돈</button></div>
+<div class="row"><input id="what" maxlength="20" placeholder="무엇? (예: 용돈, 간식)"><input id="amt" type="number" inputmode="numeric" min="0" step="100" placeholder="금액(원)"></div>
+<div class="row"><input id="date" type="date"><button class="btn" id="add">적기</button></div>
+<div class="goal"><div class="row" style="align-items:center;margin-bottom:6px"><span style="flex:none;font-weight:600">모으는 목표</span><input id="goal" type="number" inputmode="numeric" min="0" step="1000" placeholder="목표 금액(원)"></div>
+<div class="bar"><i id="gbar" style="width:0"></i></div><div class="muted" id="gtxt">목표 금액을 적으면 얼마나 모였는지 보여 줘요.</div></div>
+<ul class="items" id="items"></ul>
+<p class="muted" id="empty">아직 기록이 없어요. 첫 용돈부터 적어 보세요.</p>
+</div>
+<h2>아이랑 만드는 순서</h2>
+<h3>1. 아이가 정할 질문</h3>
+<p class="muted">답은 아이가 정하고, 부모는 받아 적기만 합니다. 정한 답을 아래 프롬프트의 [ ] 자리에 넣어요.</p>
+<ol class="q"><li>받은 돈과 쓴 돈을 무슨 색으로 보여 줄까?</li><li>돈을 쓸 때 고를 수 있는 종류는 뭐가 있으면 좋을까? (예: 간식, 장난감, 저금)</li><li>모으고 싶은 목표는 얼마고, 다 모이면 화면에 뭐라고 나올까?</li><li>남은 돈이 0원보다 적어지면 어떻게 알려 줄까?</li></ol>
+<h3>2. 챗GPT 등에 붙여 넣을 프롬프트</h3>
+<div class="prompt"><pre id="p1">초등학생이 쓰는 &#x27;용돈 기록장&#x27;을 HTML 파일 하나로 만들어 줘. 브라우저에서 바로 열리게 하고, 설명 없이 코드만 줘.
+
+기능:
+1. &#x27;받은 돈&#x27;과 &#x27;쓴 돈&#x27;을 골라서 무엇인지와 금액을 적으면 목록에 쌓인다.
+2. 맨 위에 &#x27;남은 돈&#x27;을 크게 보여 준다.
+3. 받은 돈은 [색], 쓴 돈은 [색]으로 보여 준다.
+4. 쓴 돈의 종류는 [종류1, 종류2, 종류3] 중에서 고른다.
+5. 목표 금액은 [금액]원이고, 다 모이면 &quot;[아이가 정한 말]&quot;이라고 크게 띄운다.
+6. 남은 돈이 0원보다 적어지면 [아이가 정한 방법]으로 알려 준다.
+7. 기록은 이 브라우저에만 저장되게 해 줘(localStorage). 이름 같은 개인정보는 받지 마.</pre><button class="btn s" data-copy="p1">복사</button></div>
+<h3>3. 에러가 나면 이렇게 물어보기</h3>
+<div class="prompt"><pre id="p1e0">금액을 적었는데 남은 돈 계산이 이상해. 숫자가 글자로 더해지는 것 같아. 어디가 문제인지 알려 주고 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p1e0">복사</button></div>
+<div class="prompt"><pre id="p1e1">화면이 하얗게 나오고 아무것도 안 보여. 코드 전체를 다시 확인해서 HTML 파일 하나로, 처음부터 끝까지 빠짐없이 다시 써 줘.</pre><button class="btn s" data-copy="p1e1">복사</button></div>
+<div class="prompt"><pre id="p1e2">버튼을 눌러도 아무 일이 안 일어나. 왜 그런지 초등학생도 알 수 있게 한 줄로 설명하고, 고친 코드 전체를 다시 줘.</pre><button class="btn s" data-copy="p1e2">복사</button></div>
+<h3>4. 30분 시간표</h3>
+<table class="tt"><tr><td>0~5분</td><td>위 완성본을 같이 써 보고 "우리는 뭘 바꿀까?" 한 가지만 고른다.</td></tr><tr><td>5~12분</td><td>질문 4개에 아이가 답하고, 프롬프트 [ ] 자리를 채운다.</td></tr><tr><td>12~20분</td><td>챗GPT에 붙여 넣고, 나온 코드를 메모장에 붙여 allowance.html 로 저장해 연다.</td></tr><tr><td>20~27분</td><td>이상한 곳을 아이가 찾고, 에러 문장으로 한 번 고친다.</td></tr><tr><td>27~30분</td><td>이번 주 받은 용돈을 진짜로 하나 적어 보고 끝.</td></tr></table>
+
+<div class="safe">이 페이지는 아이 개인정보를 받지 않습니다. 기록은 지금 쓰는 기기의 브라우저에만 남고, 브라우저 기록을 지우면 함께 사라져요. 챗GPT에도 아이 이름·학교·사진은 넣지 않는 걸 권합니다.</div>
+<footer><div class="handle">@hi_jun_baby</div>기준일 2026-11-16 · 출처: 직접 만든 예시 도구와 프롬프트(외부 자료 인용 없음)<br>아이 이름·사진·학교 같은 개인정보는 받지도 저장하지도 않습니다. 저장은 이 기기 브라우저 안에만 되고, 학습·발달 효과를 약속하지 않습니다.</footer>
+</main>
+<script>function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function today(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
+var K="aitools-allowance",D=load(K,{items:[],goal:0}),kind="in";
+function won(n){return n.toLocaleString("ko-KR")+"원"}
+document.getElementById("date").value=today();if(D.goal)document.getElementById("goal").value=D.goal;
+document.querySelector(".seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;kind=b.dataset.k;
+ Array.prototype.forEach.call(this.children,function(x){x.setAttribute("aria-pressed",x===b)})});
+document.getElementById("add").onclick=function(){var w=document.getElementById("what").value.trim(),a=parseInt(document.getElementById("amt").value,10),d=document.getElementById("date").value||today();
+ if(!w||!(a>0)){alert("무엇인지와 금액을 적어 주세요.");return}
+ D.items.push({k:kind,w:w,a:a,d:d});save(K,D);document.getElementById("what").value="";document.getElementById("amt").value="";draw()};
+document.getElementById("goal").oninput=function(){D.goal=Math.max(0,parseInt(this.value,10)||0);save(K,D);draw()};
+document.getElementById("items").addEventListener("click",function(e){var b=e.target.closest("button[data-i]");if(!b)return;if(confirm("이 기록을 지울까요?")){D.items.splice(+b.dataset.i,1);save(K,D);draw()}});
+function draw(){var bal=0,mi=0,mo=0,ym=today().slice(0,7);
+ D.items.forEach(function(x){bal+=x.k==="in"?x.a:-x.a;if(x.d.slice(0,7)===ym){if(x.k==="in")mi+=x.a;else mo+=x.a}});
+ document.getElementById("bal").textContent=won(bal);document.getElementById("mIn").textContent=won(mi);document.getElementById("mOut").textContent=won(mo);
+ var order=D.items.map(function(x,i){return[x,i]}).sort(function(a,b){return a[0].d<b[0].d?1:a[0].d>b[0].d?-1:b[1]-a[1]});
+ document.getElementById("items").innerHTML=order.map(function(p){var x=p[0];return '<li><span class="d">'+esc(x.d.slice(5).replace("-","/"))+'</span><span class="n">'+esc(x.w)+'</span><span class="m '+x.k+'">'+(x.k==="in"?"+":"−")+won(x.a)+'</span><button data-i="'+p[1]+'" aria-label="지우기">지우기</button></li>'}).join("");
+ document.getElementById("empty").hidden=D.items.length>0;
+ var g=D.goal,r=g>0?Math.max(0,Math.min(1,bal/g)):0;document.getElementById("gbar").style.width=(r*100)+"%";
+ document.getElementById("gtxt").textContent=g>0?(bal>=g?"목표 달성! "+won(bal)+" 모였어요.":won(Math.max(0,bal))+" / "+won(g)+" · "+won(g-Math.max(0,bal))+" 남았어요."):"목표 금액을 적으면 얼마나 모였는지 보여 줘요.";}
+draw();
+</script>
+<script>
+document.addEventListener("click",function(e){var b=e.target.closest("[data-copy]");if(!b)return;var t=document.getElementById(b.dataset.copy).innerText;
+function ok(){var o=b.textContent;b.textContent="복사했어요";setTimeout(function(){b.textContent=o},1500)}
+function fb(){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(_){}a.remove()}
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()});
+</script>
+</body></html>
