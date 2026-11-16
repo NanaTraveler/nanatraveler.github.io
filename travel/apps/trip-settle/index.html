@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="ko" data-account="travel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>여행 경비 정산기</title>
+<meta name="description" content="여행 중 누가 얼마를 냈는지 적으면 누가 누구에게 얼마를 보낼지 계산하는 웹앱">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+[hidden]{display:none!important}
+.app-grid{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+.app-grid > *{min-width:0}
+@media (min-width:900px){
+  :root{--wrap:960px}
+  .app-grid{grid-template-columns:5fr 6fr;gap:var(--s-5);align-items:start}
+}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head--flush{margin-bottom:0}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.result{display:flex;flex-direction:column;gap:var(--s-4)}
+.btn--sm{min-height:36px;padding:0 var(--s-3);font-size:var(--t-15)}
+.field-box input.l{text-align:left;font-size:var(--t-16)}
+.row{display:flex;gap:var(--s-2)}
+.row > *{flex:1;min-width:0}
+.row > .btn{flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line-2);border-radius:var(--r-1);padding:1px 4px 1px 8px;font-size:var(--t-13)}
+.chips button{border:0;background:none;padding:0 4px;color:var(--ink-3);font:400 var(--t-15)/1 var(--font);cursor:pointer}
+.block{display:flex;flex-direction:column;gap:var(--s-2);margin-top:var(--s-5);padding-top:var(--s-4);border-top:1px solid var(--line)}
+.block-title{font-weight:700}
+.who{display:flex;flex-wrap:wrap;gap:6px}
+.who label{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);font-size:var(--t-15);cursor:pointer}
+.who input{width:18px;height:18px;margin:0;accent-color:var(--ink)}
+.pays{border-top:1px solid var(--ink)}
+.pays li{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-2) 0;border-bottom:1px solid var(--line)}
+.pays .tx{flex:1;min-width:0}
+.pays .tx small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.pays .amt{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.pays button{flex:none;border:0;background:none;color:var(--ink-3);font:400 var(--t-15)/1 var(--font);cursor:pointer;padding:4px}
+.moves{display:flex;flex-direction:column;border-top:1px solid var(--ink)}
+.moves li{display:flex;justify-content:space-between;gap:var(--s-3);padding:var(--s-3) 0;border-bottom:1px solid var(--line);font-size:var(--t-18)}
+.moves b{font-variant-numeric:tabular-nums}
+.actions{display:flex;flex-wrap:wrap;gap:var(--s-2)}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@travel_junn_</b><span>해외여행 준비</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">여행 경비 정산기</h1>
+    <p class="cover-desc">누가 얼마를 냈는지 적으면 누가 누구에게 보낼지 계산합니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.16</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="app-grid">
+
+    <section class="panel" aria-labelledby="in-title">
+      <div class="panel-head">
+        <h2 id="in-title">쓴 돈 적기</h2>
+        <span class="badge" id="ex-badge">예시 값</span>
+      </div>
+
+      <div class="field">
+        <label for="m-name">항목</label>
+        <div class="field-box"><input class="l" id="m-name" maxlength="20" placeholder="예: 숙소, 저녁, 택시"></div>
+      </div>
+      <div class="field" style="margin-top:var(--s-3)">
+        <label for="m-amt">금액</label>
+        <div class="field-box"><input id="m-amt" inputmode="decimal" placeholder="0"><span class="field-unit" id="unit1">원</span></div>
+      </div>
+      <div class="field" style="margin-top:var(--s-3)">
+        <span class="field-label">낸 사람</span>
+        <div class="seg" id="m-payer" role="group" aria-label="낸 사람"></div>
+      </div>
+      <div class="field" style="margin-top:var(--s-3)">
+        <span class="field-label">나눌 사람 (같이 쓴 사람만)</span>
+        <div class="who" id="m-split"></div>
+      </div>
+      <div class="actions" style="margin-top:var(--s-4)">
+        <button class="btn btn--accent btn--block" type="button" id="m-add">이 지출 더하기</button>
+      </div>
+      <p class="small" id="m-msg" aria-live="polite"></p>
+
+      <div class="block">
+        <p class="block-title">함께 간 사람</p>
+        <div class="row"><div class="field-box"><input class="l" id="p-in" maxlength="8" placeholder="이름이나 별명" aria-label="사람 더하기"></div><button class="btn btn--sm" type="button" id="p-add">더하기</button></div>
+        <div class="chips" id="people"></div>
+      </div>
+      <div class="block">
+        <p class="block-title">통화 단위</p>
+        <div class="row"><div class="field-box"><input class="l" id="cur" maxlength="6" value="원" aria-label="통화 단위"></div></div>
+        <p class="field-help">현지 돈으로 적었다면 엔·달러처럼 바꿉니다. 한 정산 안에서는 한 통화만 씁니다.</p>
+      </div>
+    </section>
+
+    <section class="panel result" aria-labelledby="out-title" aria-live="polite">
+      <div class="panel-head panel-head--flush">
+        <h2 id="out-title">정산 결과</h2>
+        <span class="badge" id="out-state">계산됨</span>
+      </div>
+      <div class="key">
+        <span class="key-label">보낼 횟수</span>
+        <output class="key-value" id="o-n">2<small>번</small></output>
+      </div>
+      <ol class="moves" id="moves"></ol>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>사람</th><th class="num">낸 돈</th><th class="num">쓴 몫</th><th class="num">차액</th></tr></thead>
+          <tbody id="rows"></tbody>
+          <tfoot><tr><td>합계</td><td class="num" id="t-paid"></td><td class="num" id="t-share"></td><td class="num">0</td></tr></tfoot>
+        </table>
+      </div>
+      <p class="small">차액이 +면 받을 돈, −면 보낼 돈입니다. 원·엔은 1 단위, 다른 통화는 소수 둘째 자리에서 반올림했습니다.</p>
+      <div class="actions">
+        <button class="btn btn--ghost btn--sm" type="button" id="copy">결과 글로 복사</button>
+        <button class="btn btn--ghost btn--sm" type="button" id="clear">모두 지우기</button>
+        <button class="btn btn--ghost btn--sm" type="button" id="example">예시 다시 보기</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="list-title">
+    <div>
+      <p class="eyebrow">지출 목록</p>
+      <h2 class="sec-title" id="list-title">적은 지출</h2>
+    </div>
+    <ol class="pays" id="pays"></ol>
+    <p class="small" id="pays-empty" hidden>아직 적은 지출이 없습니다.</p>
+    <div class="callout">
+      <span class="callout-label">계산 방법</span>
+      <p>지출마다 금액을 나눌 사람 수로 똑같이 나눠 각자의 몫에 더합니다. 낸 돈에서 몫을 뺀 차액을 구한 뒤, 가장 많이 받을 사람과 가장 많이 보낼 사람을 차례로 짝지어 보내는 횟수를 줄입니다.</p>
+    </div>
+    <div class="callout">
+      <span class="callout-label">저장</span>
+      <p>입력한 내용은 이 기기의 브라우저에만 저장되고 어디로도 보내지지 않습니다. 같이 보려면 "결과 글로 복사"로 메신저에 붙여 넣으세요.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@travel_junn_</dd>
+      <dt>기준일</dt><dd>2026.11.16</dd>
+      <dt>출처</dt><dd>직접 만든 계산식 (지출별 균등 분할, 차액 정산). 외부 자료를 쓰지 않습니다.</dd>
+    </dl>
+    <p class="foot-note">카드 해외 결제 수수료와 환율 차이는 넣지 않습니다. 원화로 맞추려면 카드 명세서 금액을 기준으로 적으세요.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var KEY='travel-trip-settle';
+  var EX={people:['가','나','다'],cur:'원',pays:[
+    {n:'숙소 2박',a:300000,p:'가',s:['가','나','다']},
+    {n:'저녁',a:90000,p:'나',s:['가','나','다']},
+    {n:'공항 택시',a:30000,p:'다',s:['가','나']}],ex:true};
+  var S=null,payer=null;
+  try{S=JSON.parse(localStorage.getItem(KEY)||'null')}catch(_){}
+  if(!S||!S.people)S=JSON.parse(JSON.stringify(EX));
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function fmt(n){return (Math.round(n*100)/100).toLocaleString('ko-KR',{maximumFractionDigits:2})}
+  function num(v){return parseFloat(String(v).replace(/[^0-9.]/g,''))}
+  function cur(){return S.cur||'원'}
+  function whole(){return /^(원|엔|₩|KRW|JPY|동|VND|루피아|IDR)$/i.test(cur())}
+  function rd(n){return whole()?Math.round(n):Math.round(n*100)/100}
+
+  function settle(){
+    var bal={},paid={},share={};
+    S.people.forEach(function(p){bal[p]=0;paid[p]=0;share[p]=0});
+    S.pays.forEach(function(x){
+      var who=x.s.filter(function(p){return p in bal});if(!who.length||!(x.p in bal))return;
+      paid[x.p]+=x.a;var each=x.a/who.length;who.forEach(function(p){share[p]+=each});
+    });
+    S.people.forEach(function(p){bal[p]=paid[p]-share[p]});
+    var cr=[],db=[];
+    S.people.forEach(function(p){var b=Math.round(bal[p]*100)/100;if(b>0.005)cr.push([p,b]);else if(b<-0.005)db.push([p,-b])});
+    var moves=[];
+    while(cr.length&&db.length){
+      cr.sort(function(a,b){return b[1]-a[1]});db.sort(function(a,b){return b[1]-a[1]});
+      var m=Math.min(cr[0][1],db[0][1]);
+      if(m>=0.5)moves.push([db[0][0],cr[0][0],m]);
+      cr[0][1]-=m;db[0][1]-=m;
+      if(cr[0][1]<0.005)cr.shift();if(db[0][1]<0.005)db.shift();
+    }
+    return {bal:bal,paid:paid,share:share,moves:moves};
+  }
+
+  function render(){
+    $('ex-badge').hidden=!S.ex;
+    $('unit1').textContent=cur();
+    $('people').innerHTML=S.people.map(function(p,i){return '<span>'+esc(p)+'<button type="button" data-dp="'+i+'" aria-label="'+esc(p)+' 지우기">×</button></span>'}).join('');
+    if(S.people.indexOf(payer)<0)payer=S.people[0]||null;
+    $('m-payer').innerHTML=S.people.map(function(p){return '<button type="button" aria-pressed="'+(p===payer)+'" data-p="'+esc(p)+'">'+esc(p)+'</button>'}).join('');
+    var checked={};Array.prototype.forEach.call($('m-split').querySelectorAll('input'),function(c){checked[c.value]=c.checked});
+    $('m-split').innerHTML=S.people.map(function(p){var on=(p in checked)?checked[p]:true;return '<label><input type="checkbox" value="'+esc(p)+'"'+(on?' checked':'')+'>'+esc(p)+'</label>'}).join('');
+    $('pays').innerHTML=S.pays.map(function(x,i){
+      return '<li><span class="tx">'+esc(x.n||'지출')+'<small>'+esc(x.p)+' 냄 · '+x.s.map(esc).join('·')+' 나눔</small></span><span class="amt">'+fmt(x.a)+esc(cur())+'</span><button type="button" data-dx="'+i+'" aria-label="지우기">×</button></li>'}).join('');
+    $('pays-empty').hidden=S.pays.length>0;
+    var r=settle(),st=$('out-state');
+    if(S.people.length<2||!S.pays.length){st.textContent='입력 필요';st.className='badge badge--warn'}else{st.textContent='계산됨';st.className='badge'}
+    $('o-n').innerHTML=r.moves.length+'<small>번</small>';
+    $('moves').innerHTML=r.moves.length?r.moves.map(function(m){return '<li><span>'+esc(m[0])+' → '+esc(m[1])+'</span><b>'+fmt(rd(m[2]))+esc(cur())+'</b></li>'}).join(''):'<li><span class="small">보낼 돈이 없습니다.</span></li>';
+    var tp=0,ts=0;
+    $('rows').innerHTML=S.people.map(function(p){tp+=r.paid[p];ts+=r.share[p];var b=rd(r.bal[p]);
+      return '<tr><td>'+esc(p)+'</td><td class="num">'+fmt(r.paid[p])+'</td><td class="num">'+fmt(rd(r.share[p]))+'</td><td class="num">'+(b>0?'+':'')+fmt(b)+'</td></tr>'}).join('');
+    $('t-paid').textContent=fmt(tp);$('t-share').textContent=fmt(rd(ts));
+    save();
+  }
+
+  $('m-payer').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;payer=b.dataset.p;render()});
+  $('m-add').addEventListener('click',function(){
+    var a=num($('m-amt').value),msg=$('m-msg');
+    var s=Array.prototype.filter.call($('m-split').querySelectorAll('input'),function(c){return c.checked}).map(function(c){return c.value});
+    if(S.people.length<2){msg.textContent='함께 간 사람을 2명 이상 넣어 주세요.';return}
+    if(!(a>0)){msg.textContent='금액을 넣어 주세요.';$('m-amt').focus();return}
+    if(!s.length){msg.textContent='나눌 사람을 한 명 이상 골라 주세요.';return}
+    if(S.ex){S.pays=[];S.ex=false}
+    S.pays.push({n:$('m-name').value.trim(),a:a,p:payer,s:s});
+    $('m-name').value='';$('m-amt').value='';msg.textContent='더했습니다.';render();
+  });
+  $('p-add').addEventListener('click',function(){
+    var v=$('p-in').value.trim();if(!v)return;
+    if(S.people.indexOf(v)>=0){$('m-msg').textContent='이미 있는 이름입니다.';return}
+    if(S.people.length>=10){$('m-msg').textContent='10명까지 넣을 수 있습니다.';return}
+    if(S.ex){S.people=[];S.pays=[];S.ex=false}
+    S.people.push(v);$('p-in').value='';render();
+  });
+  $('p-in').addEventListener('keydown',function(e){if(e.key==='Enter')$('p-add').click()});
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-dp]');
+    if(b){var p=S.people[+b.dataset.dp];if(S.pays.some(function(x){return x.p===p||x.s.indexOf(p)>=0})){$('m-msg').textContent=p+'이(가) 들어간 지출을 먼저 지워 주세요.';return}S.people.splice(+b.dataset.dp,1);render();return}
+    b=e.target.closest('[data-dx]');if(b){S.pays.splice(+b.dataset.dx,1);render()}
+  });
+  $('cur').addEventListener('input',function(){S.cur=this.value.trim()||'원';render()});
+  $('clear').addEventListener('click',function(){if(!confirm('사람과 지출을 모두 지울까요?'))return;S={people:[],cur:cur(),pays:[],ex:false};render()});
+  $('example').addEventListener('click',function(){S=JSON.parse(JSON.stringify(EX));$('cur').value='원';render()});
+  $('copy').addEventListener('click',function(){
+    var r=settle(),t='여행 경비 정산\n'+(r.moves.length?r.moves.map(function(m){return m[0]+' → '+m[1]+' '+fmt(rd(m[2]))+cur()}).join('\n'):'보낼 돈 없음')
+      +'\n\n지출 '+S.pays.length+'건, 합계 '+fmt(S.pays.reduce(function(s,x){return s+x.a},0))+cur();
+    var b=this;function ok(){var o=b.textContent;b.textContent='복사했어요';setTimeout(function(){b.textContent=o},1500)}
+    function fb(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(_){}a.remove()}
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb();
+  });
+  $('cur').value=cur();
+  render();
+})();
+</script>
+</body>
+</html>
