@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="ko" data-account="travel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>입국 신고 한 장 정리 · 나라별 전자 입국 신고와 전자여행허가</title>
+<meta name="description" content="일본·대만·태국·베트남·필리핀·싱가포르·말레이시아·인도네시아·미국·괌·캐나다·영국·호주 입국 신고와 전자여행허가를 언제, 어디서, 얼마에 하는지 정리한 요약서">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 요약서 배치: 화면에서는 표지가 첫 화면의 대부분을 차지하고 제목이 아래에 놓인다 */
+.cover--page .cover-in{min-height:min(64vh,520px)}
+.cover--page .cover-title{margin-top:auto;padding-top:var(--s-8)}
+.guide{font-size:17px}
+.step-head{display:flex;flex-direction:column;gap:2px;padding-top:var(--s-4);border-top:2px solid var(--ink)}
+
+/* 인쇄(A4): 표지는 여백 없는 한 장, 본문은 여백 있는 쪽 */
+@page{size:A4;margin:18mm 17mm 20mm}
+@page cover{size:A4;margin:0}
+@media print{
+  :root{--bg:#ffffff;--gutter:0px;--wrap:none}
+  body{font-size:10.5pt}
+  .guide{font-size:10.5pt}
+  .cover--page{page:cover;break-after:page;height:297mm;overflow:hidden}
+  .cover--page .cover-in{box-sizing:border-box;height:297mm;min-height:0;max-width:none;padding:20mm 18mm 18mm}
+  .cover--page .cover-top{font-size:11pt}
+  .cover--page .cover-kind{font-size:10pt;padding:1mm 3mm}
+  .cover--page .cover-title{font-size:40pt;max-width:150mm}
+  .cover--page .cover-desc{font-size:13pt;margin-top:5mm}
+  .cover--page .cover-meta{font-size:10pt;margin-top:14mm;padding-top:4mm}
+  .main{padding-block:0 8mm;gap:9mm}
+  .sec{gap:3.5mm;break-inside:avoid}
+  .sec-title{font-size:15pt}
+  .lead{font-size:12pt}
+  .step-head,.sec-title,.sub-title,.eyebrow{break-after:avoid}
+  pre.code,.callout,table,.quote,.check li,.toc li{break-inside:avoid}
+  pre.code{font-size:9.5pt}
+  table{font-size:10pt}
+  .toc a span{display:none}
+  .foot{padding-block:5mm 0;font-size:9pt;break-inside:avoid}
+  a{text-decoration:none}
+  .sec--long{break-inside:auto}
+  .sec--long table{break-inside:auto}
+  .sec--long tr{break-inside:avoid}
+}
+/* 이 파일만의 배치 */
+.ic td:first-child{white-space:nowrap;font-weight:700}
+.ic td:nth-child(4){min-width:4.6em}
+.ic td small{display:block;font-size:var(--t-13);color:var(--ink-2);line-height:1.5;margin-top:2px}
+.ic .dom{font-family:var(--mono);font-size:var(--t-13);overflow-wrap:anywhere}
+@media (min-width:700px){.ic td:nth-child(2){width:34%}}
+@media (max-width:559px){.ic td[data-label="공식 주소"]{grid-column:1/-1}}
+</style>
+</head>
+<body>
+
+<header class="cover cover--page">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@travel_junn_</b><span>해외여행 준비</span></p>
+      <p class="cover-kind">요약서</p>
+    </div>
+    <h1 class="cover-title">입국 신고 한 장 정리</h1>
+    <p class="cover-desc">나라별 입국 신고·전자여행허가를 언제, 어디서 하는지 모읍니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.17</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+      <div><dt>분량</dt><dd>읽는 데 7분</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main guide">
+
+  <section class="sec">
+    <p class="lead">종이 입국 카드가 사라지고, 대신 <strong>출발 며칠 전에 온라인으로 내는 신고</strong>가 늘었습니다. 한국 여권 기준으로 나라마다 무엇을, 언제부터, 어느 주소에서 내는지 한 장에 모았습니다.</p>
+    <div class="callout callout--accent">
+      <span class="callout-label">한눈에</span>
+      <ul class="bullets">
+        <li>도착 3일(72시간) 안에 내는 신고: 태국·베트남·필리핀·싱가포르·말레이시아·인도네시아, 괌 세관 신고. 너무 일찍 내면 날짜가 안 잡힙니다.</li>
+        <li>대만은 도착 7일 전부터, 일본 Visit Japan Web 은 선택(종이 카드도 받음).</li>
+        <li>미리 받아 두는 허가(비용 있음): 미국 ESTA 40달러, 캐나다 eTA 7캐나다달러, 영국 ETA 20파운드, 호주 ETA 20호주달러. 괌·사이판 G-CNMI ETA 는 무료.</li>
+        <li>신고형은 공식 사이트에서 모두 무료입니다. 돈을 받는 곳은 대행 사이트입니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <nav class="sec" aria-labelledby="toc-title">
+    <h2 class="eyebrow" id="toc-title">목차</h2>
+    <ol class="toc">
+      <li><a href="#s1">일본·대만<span>미리 하면 빠른 신고</span></a></li>
+      <li><a href="#s2">동남아 6개국<span>도착 3일 안</span></a></li>
+      <li><a href="#s3">미국·괌·캐나다·영국·호주<span>미리 받는 허가</span></a></li>
+      <li><a href="#s4">유럽 EES·ETIAS<span>현황</span></a></li>
+      <li><a href="#s5">가짜 사이트 피하기<span>주소 보는 법</span></a></li>
+      <li><a href="#s6">출발 전 확인<span>체크리스트</span></a></li>
+    </ol>
+  </nav>
+
+  <section class="sec" id="s1">
+    <div class="step-head">
+      <p class="eyebrow">동아시아</p>
+      <h2 class="sec-title">일본·대만</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="ic table--stack">
+        <thead><tr><th>나라</th><th>무엇</th><th>언제</th><th>비용</th><th>공식 주소</th></tr></thead>
+        <tbody>
+          <tr><td>일본</td><td data-label="무엇">Visit Japan Web: 입국 카드·세관 신고(·면세 등록)를 QR 로<small>선택 사항. 종이 카드도 기내에서 나눠 주고 모든 공항에서 받습니다. 하네다·나리타·간사이 등은 QR 과 여권을 한 번에 읽는 키오스크.</small></td><td data-label="언제">항공권 예약 뒤, 도착 6시간 전까지 마치기를 권장</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">vjw.digital.go.jp</span></td></tr>
+          <tr><td>대만</td><td data-label="무엇">온라인 입국 카드(TWAC)<small>2025년 10월 1일부터 온라인 작성. 거류증(ARC) 소지자 등은 제외.</small></td><td data-label="언제">도착 7일 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">twac.<wbr>immigration.<wbr>gov.<wbr>tw</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec sec--long" id="s2">
+    <div class="step-head">
+      <p class="eyebrow">도착 3일(72시간) 안</p>
+      <h2 class="sec-title">동남아 6개국</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="ic table--stack">
+        <thead><tr><th>나라</th><th>무엇</th><th>언제</th><th>비용</th><th>공식 주소</th></tr></thead>
+        <tbody>
+          <tr><td>태국</td><td data-label="무엇">디지털 입국 카드 TDAC<small>2025년 5월 1일 시행. 아이와 아기도 한 장씩(보호자가 작성). 출국장을 나가지 않는 환승객은 제외.</small></td><td data-label="언제">도착 3일 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">tdac.<wbr>immigration.<wbr>go.<wbr>th</span></td></tr>
+          <tr><td>베트남</td><td data-label="무엇">사전 입국정보 신고(QR)<small>2026년 4월 호찌민 떤선녓 공항에서 시작해 다른 국제공항으로 넓히는 중. 내 도착 공항 적용 여부는 확인 필요. 한국 여권 무비자 45일(2028.3.14까지 시행).</small></td><td data-label="언제">도착 72시간 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">prearrival.<wbr>immigration.<wbr>gov.<wbr>vn</span></td></tr>
+          <tr><td>필리핀</td><td data-label="무엇">eTravel(QR)<small>탑승 전 항공사에 QR 또는 캡처를 보여 줍니다.</small></td><td data-label="언제">도착 72시간 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">etravel.gov.ph</span></td></tr>
+          <tr><td>싱가포르</td><td data-label="무엇">SG Arrival Card<small>앱 MyICA 로도 가능. 안 내고 도착하면 그 자리에서 쓰고 줄을 다시 섭니다.</small></td><td data-label="언제">도착일 포함 3일 안</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">eservices.<wbr>ica.<wbr>gov.<wbr>sg/<wbr>sgarrivalcard</span></td></tr>
+          <tr><td>말레이시아</td><td data-label="무엇">디지털 입국 카드 MDAC<small>한국 여권은 대상(면제 아님). 자동출입국 심사대 대상국이지만 첫 방문은 유인 심사대에서 등록.</small></td><td data-label="언제">도착 3일 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">imigresen-online.<wbr>imi.<wbr>gov.<wbr>my/<wbr>mdac/<wbr>main</span></td></tr>
+          <tr><td>인도네시아</td><td data-label="무엇">All Indonesia: 입국·세관·건강 신고를 한 번에<small>2025년 10월 1일부터 모든 국제공항. 비자(도착비자 등)는 따로 필요하며 비용은 확인 필요.</small></td><td data-label="언제">도착 72시간 전부터</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">allindonesia.<wbr>imigrasi.<wbr>go.<wbr>id</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">베트남 건강 신고서는 2026년 도입 소식이 있으나 대상과 의무 여부는 확인 필요.</p>
+  </section>
+
+  <section class="sec sec--long" id="s3">
+    <div class="step-head">
+      <p class="eyebrow">결과가 바로 안 나올 수 있음</p>
+      <h2 class="sec-title">미국·괌·캐나다·영국·호주</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="ic table--stack">
+        <thead><tr><th>나라</th><th>무엇</th><th>언제</th><th>비용</th><th>공식 주소</th></tr></thead>
+        <tbody>
+          <tr><td>미국</td><td data-label="무엇">ESTA(전자여행허가)<small>최장 2년(여권 만료가 먼저면 그때까지), 여러 번 입국.</small></td><td data-label="언제">출발 72시간 전까지는 마치기, 일정 잡히면 바로</td><td data-label="비용">40달러(2025.9.30부터)</td><td data-label="공식 주소"><span class="dom">esta.cbp.dhs.gov</span></td></tr>
+          <tr><td>괌·사이판</td><td data-label="무엇">G-CNMI ETA(괌·북마리아나 무비자 프로그램)<small>2024년 11월 29일부터. 45일 이내, 미국 본토 등을 거치지 않고 바로 갈 때. 2년 유효. 괌 세관 신고(EDF)는 도착 72시간 전부터, 가족당 1장, 2025년 2월부터 전자로만.</small></td><td data-label="언제">탑승 1주 전까지</td><td data-label="비용">무료</td><td data-label="공식 주소"><span class="dom">g-cnmi-eta.<wbr>cbp.<wbr>dhs.<wbr>gov</span><br><span class="dom">cqa.guam.gov</span>(세관)</td></tr>
+          <tr><td>캐나다</td><td data-label="무엇">eTA<small>최장 5년(여권 만료 시 끝). 새 여권이면 다시 신청. 한 사람씩.</small></td><td data-label="언제">항공권 사기 전후, 여유 있게</td><td data-label="비용">7캐나다달러</td><td data-label="공식 주소"><span class="dom">canada.ca</span> 안의 eTA 신청</td></tr>
+          <tr><td>영국</td><td data-label="무엇">ETA<small>2년 유효(여권 만료와의 관계는 확인 필요).</small></td><td data-label="언제">처리 기간 확인 필요, 여유 있게</td><td data-label="비용">20파운드(2026.4.8부터, 전에는 16파운드)</td><td data-label="공식 주소"><span class="dom">gov.uk</span> 또는 UK ETA 앱</td></tr>
+          <tr><td>호주</td><td data-label="무엇">ETA(앱으로만 신청)<small>1년간 여러 번, 한 번에 3개월까지. 아기까지 한 사람씩, 신청할 때 본인 얼굴 사진을 찍으므로 함께 있어야 합니다.</small></td><td data-label="언제">출발 4주 전 권장(결과는 대개 72시간 안)</td><td data-label="비용">20호주달러</td><td data-label="공식 주소">앱 'Australian ETA'</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout--warn">
+      <span class="callout-label">주의</span>
+      <p>허가형은 신청 즉시 승인되지 않을 수 있습니다. 비행기표보다 먼저, 늦어도 출국 3일 전에는 결과까지 받아 두세요.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s4">
+    <div class="step-head">
+      <p class="eyebrow">2026년 11월 현재</p>
+      <h2 class="sec-title">유럽 EES·ETIAS</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="ic">
+        <thead><tr><th>제도</th><th>지금 상태</th></tr></thead>
+        <tbody>
+          <tr><td>EES</td><td>2026년 4월 10일부터 전면 시행. 솅겐 지역 첫 입국 때 심사대에서 지문·얼굴을 등록합니다. 사전 신청은 없지만 심사 줄이 길어질 수 있어요.</td></tr>
+          <tr><td>ETIAS</td><td>아직 시작 전. 공식 사이트에서 '2026년 4분기' 예정 문구가 빠졌고 2027년 시작이 유력하다는 보도(2026.9). 시작 전에는 낼 것이 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">공식 안내: <span class="dom">travel-europe.<wbr>europa.<wbr>eu</span> (EU). 시작일이 정해지면 이곳에 먼저 올라옵니다.</p>
+  </section>
+
+  <section class="sec" id="s5">
+    <div class="step-head">
+      <p class="eyebrow">돈 내는 대행 사이트</p>
+      <h2 class="sec-title">가짜 사이트 피하기</h2>
+    </div>
+    <ul class="bullets">
+      <li>검색 첫 줄 광고가 공식 사이트가 아닐 때가 많습니다. 위 표의 주소를 직접 입력하세요.</li>
+      <li>정부 주소는 나라 끝말이 붙습니다: <span class="dom">.go.jp</span> <span class="dom">.gov.tw</span> <span class="dom">.go.th</span> <span class="dom">.gov.vn</span> <span class="dom">.gov.ph</span> <span class="dom">.gov.sg</span> <span class="dom">.gov.my</span> <span class="dom">.go.id</span> <span class="dom">.gov</span> <span class="dom">canada.ca</span> <span class="dom">gov.uk</span></li>
+      <li>신고형(일본·대만·동남아·괌 세관)은 결제 화면이 나오면 잘못 들어온 것입니다. 태국은 tdac.info 같은 비슷한 주소가 따로 있다는 경고가 나와 있습니다.</li>
+      <li>필리핀은 결제를 요구하는 사이트를 사이버범죄 신고 대상으로 안내합니다.</li>
+      <li>제출 뒤 받은 QR·승인 화면은 캡처해 두고, 여권 번호가 맞는지 한 번 더 봅니다.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="s6">
+    <div class="step-head">
+      <p class="eyebrow">출국 3일 전</p>
+      <h2 class="sec-title">출발 전 확인</h2>
+    </div>
+    <ul class="check">
+      <li><label><input type="checkbox" id="k1"><span>가는 나라의 신고·허가 이름과 여는 날짜 확인<small>72시간형은 달력에 '신고 여는 날' 알람.</small></span></label></li>
+      <li><label><input type="checkbox" id="k2"><span>허가형(ESTA·eTA·ETA)은 승인 결과까지 받기</span></label></li>
+      <li><label><input type="checkbox" id="k3"><span>가족·아이도 한 사람씩 냈는지<small>괌 세관 신고처럼 가족당 1장인 곳도 있습니다.</small></span></label></li>
+      <li><label><input type="checkbox" id="k4"><span>주소창이 공식 도메인인지, 결제 화면이 없었는지</span></label></li>
+      <li><label><input type="checkbox" id="k5"><span>QR·승인 화면 캡처, 여권 번호·영문 이름 철자 확인</span></label></li>
+      <li><label><input type="checkbox" id="k6"><span>규정이 바뀌었을 수 있으니 출발 전 공식 안내 다시 확인</span></label></li>
+    </ul>
+    <p class="small">체크한 칸은 이 기기 브라우저에만 저장됩니다.</p>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@travel_junn_</dd>
+      <dt>기준일</dt><dd>2026.11.17</dd>
+      <dt>출처</dt><dd>각국 공식 안내: 태국 대사관 TDAC 안내, 싱가포르 ICA, 필리핀 eTravel FAQ, 괌정부관광청 입출국 안내, 미국 CBP(ESTA), 호주 고등판무관실(ETA). 보도·안내 글: Wego(일본·대만·말레이시아·인도네시아, 2026.4~6 갱신), Fragomen(ESTA 수수료 2025.8), Lewis Silkin·VisasNews(영국 ETA 2026.3), Newland Chase(EES·ETIAS 2026.9), 베트남 관광청·Vietcetera·InsideFlyer·다음 뉴스(2026.7~11), 일본 HIS(G-CNMI ETA 2025.10), immigration.ca(eTA)</dd>
+    </dl>
+    <p class="foot-note">입국 규정과 비용은 예고 없이 바뀝니다. 출발 전 각 나라 공식 안내와 항공사 공지를 꼭 확인하세요. 한국 여권 기준입니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+<script>
+try{['k1','k2','k3','k4','k5','k6'].forEach(function(id){var k='immigration-cards-'+id,el=document.getElementById(id);el.checked=localStorage.getItem(k)==='1';
+  el.addEventListener('change',function(){try{localStorage.setItem(k,this.checked?'1':'0')}catch(_){}})})}catch(_){}
+</script>
+</body>
+</html>
