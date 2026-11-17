@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="ko" data-account="chart">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>매매일지 · 진입 이유·계획·결과·감정 기록</title>
+<meta name="description" content="진입 이유와 손절가, 결과와 그때 마음을 기록하고 R배수·계획 준수별 결과를 보는 매매일지. 이 기기에만 저장, CSV 내보내기">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+[hidden]{display:none!important}
+.app-grid{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+.app-grid > *{min-width:0}
+@media (min-width:900px){
+  :root{--wrap:960px}
+  .app-grid{grid-template-columns:6fr 5fr;gap:var(--s-5);align-items:start}
+}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head--flush{margin-bottom:0}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.result{display:flex;flex-direction:column;gap:var(--s-4)}
+.actions{display:flex;gap:var(--s-2);margin-top:var(--s-4)}
+.actions .btn{flex:1}
+.field--wide{grid-column:1/-1}
+.field-box input.l{text-align:left;font-size:var(--t-16)}
+.field-box textarea{flex:1;min-width:0;min-height:84px;padding:var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:400 var(--t-16)/1.5 var(--font);resize:vertical;outline:0}
+.hint{padding:var(--s-3) 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:var(--t-15);line-height:1.55}
+.hint b{font-variant-numeric:tabular-nums}
+.btn--sm{min-height:36px;padding:0 var(--s-3);font-size:var(--t-15)}
+.tools{display:flex;flex-wrap:wrap;gap:var(--s-2)}
+.trades{border-top:1px solid var(--ink)}
+.trades li{display:flex;flex-direction:column;gap:6px;padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+.tr-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px var(--s-2)}
+.tr-top .dt{font-size:var(--t-13);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.tr-top b{font-size:var(--t-16)}
+.tr-nums{display:flex;flex-wrap:wrap;gap:2px var(--s-4);font-size:var(--t-15);font-variant-numeric:tabular-nums}
+.tr-nums span{white-space:nowrap}
+.tr-nums em{font-style:normal;color:var(--ink-3);margin-right:4px;font-size:var(--t-13)}
+.tr-why{font-size:var(--t-15);color:var(--ink-2);line-height:1.55;overflow-wrap:anywhere}
+.tr-act{display:flex;gap:var(--s-2)}
+.file-in{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@chart_nana_</b><span>차트 · 리스크 관리</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">매매일지</h1>
+    <p class="cover-desc">진입 이유·계획·결과·감정을 남겨 내 습관을 돌아봅니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.17</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <p class="lead">들어가기 전에 이유와 손절가를 적고, 나온 뒤에 결과와 그때 마음을 적습니다. 열 건쯤 쌓이면 계획을 지킨 거래와 어긴 거래가 숫자로 갈립니다.</p>
+
+  <div class="app-grid">
+    <section class="panel" aria-labelledby="in-title" id="form-panel">
+      <div class="panel-head">
+        <h2 id="in-title">기록 쓰기</h2>
+        <span class="badge" id="mode-badge">새 기록</span>
+      </div>
+      <form id="tf" class="fields" novalidate>
+        <div class="field">
+          <label for="f-date">날짜</label>
+          <div class="field-box"><input class="l" id="f-date" type="date"></div>
+        </div>
+        <div class="field">
+          <label for="f-name">대상</label>
+          <div class="field-box"><input class="l" id="f-name" maxlength="30" placeholder="내가 알아볼 이름"></div>
+        </div>
+        <div class="field field--wide">
+          <span class="field-label">방향</span>
+          <div class="seg" id="f-dir" role="group" aria-label="방향">
+            <button type="button" data-v="long" aria-pressed="true">사서 진입</button>
+            <button type="button" data-v="short" aria-pressed="false">팔아서 진입</button>
+          </div>
+          <p class="field-help">팔아서 진입은 공매도·선물 매도처럼 내려야 이익인 거래입니다.</p>
+        </div>
+        <div class="field">
+          <label for="f-entry">진입가</label>
+          <div class="field-box"><input id="f-entry" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="f-stop">손절가</label>
+          <div class="field-box"><input id="f-stop" inputmode="decimal"></div>
+        </div>
+        <div class="field">
+          <label for="f-plan">계획한 청산가</label>
+          <div class="field-box"><input id="f-plan" inputmode="decimal"></div>
+          <p class="field-help">내가 정한 이익 실현 가격. 없으면 비워 둡니다.</p>
+        </div>
+        <div class="field">
+          <label for="f-qty">수량</label>
+          <div class="field-box"><input id="f-qty" inputmode="decimal"></div>
+        </div>
+        <div class="field field--wide">
+          <label for="f-why">진입 이유</label>
+          <div class="field-box"><textarea id="f-why" maxlength="300" placeholder="무엇을 보고 들어가는지 한두 줄"></textarea></div>
+        </div>
+        <div class="field">
+          <label for="f-exit">청산가</label>
+          <div class="field-box"><input id="f-exit" inputmode="decimal"></div>
+          <p class="field-help">아직 들고 있으면 비워 두세요. 진행 중으로 남습니다.</p>
+        </div>
+        <div class="field">
+          <span class="field-label">계획대로 했나</span>
+          <div class="seg" id="f-kept" role="group" aria-label="계획대로 했나">
+            <button type="button" data-v="yes" aria-pressed="false">지켰다</button>
+            <button type="button" data-v="no" aria-pressed="false">어겼다</button>
+          </div>
+          <p class="field-help">손절가·청산가를 정한 대로 지켰는지.</p>
+        </div>
+        <div class="field field--wide">
+          <span class="field-label">그때 마음 (여러 개)</span>
+          <div class="seg" id="f-mood" role="group" aria-label="그때 마음"></div>
+        </div>
+        <div class="field field--wide">
+          <label for="f-memo">메모</label>
+          <div class="field-box"><textarea id="f-memo" maxlength="300" placeholder="다음에 똑같은 장면이 오면 어떻게 할지"></textarea></div>
+        </div>
+      </form>
+      <p class="hint" id="hint" aria-live="polite"></p>
+      <div class="actions">
+        <button class="btn btn--accent" type="submit" form="tf" id="save">저장하기</button>
+        <button class="btn btn--ghost" type="button" id="clear">새로 쓰기</button>
+      </div>
+      <p class="small" id="form-msg" aria-live="polite"></p>
+    </section>
+
+    <section class="panel result" aria-labelledby="out-title" aria-live="polite">
+      <div class="panel-head panel-head--flush">
+        <h2 id="out-title">요약</h2>
+        <span class="badge" id="sum-badge">끝난 거래 기준</span>
+      </div>
+      <div class="key">
+        <span class="key-label">평균 R배수 (거래 한 번에)</span>
+        <output class="key-value" id="o-avg">-</output>
+      </div>
+      <dl class="stats stats--2">
+        <div class="stat"><dt>끝난 거래</dt><dd id="o-n">-</dd><span class="stat-note" id="o-open"></span></div>
+        <div class="stat"><dt>이긴 비율</dt><dd id="o-win">-</dd></div>
+        <div class="stat"><dt>손익 합계</dt><dd id="o-pnl">-</dd><span class="stat-note">수수료·세금 빼기 전</span></div>
+        <div class="stat"><dt>계획 지킨 비율</dt><dd id="o-kept">-</dd></div>
+      </dl>
+      <p class="small" id="o-msg"></p>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="list-title">
+    <div>
+      <p class="eyebrow">이 기기에만 저장</p>
+      <h2 class="sec-title" id="list-title">기록 목록</h2>
+    </div>
+    <div class="seg" id="filter" role="group" aria-label="목록 거르기">
+      <button type="button" data-f="all" aria-pressed="true">전체</button>
+      <button type="button" data-f="closed" aria-pressed="false">끝남</button>
+      <button type="button" data-f="open" aria-pressed="false">진행 중</button>
+      <button type="button" data-f="broke" aria-pressed="false">계획 어김</button>
+    </div>
+    <ol class="trades" id="trades"></ol>
+    <p class="small" id="empty" hidden>아직 기록이 없습니다. 위에서 첫 기록을 남겨 보세요.</p>
+    <div class="tools">
+      <button class="btn btn--sm" type="button" id="csv-out">CSV 내보내기</button>
+      <button class="btn btn--sm btn--ghost" type="button" id="csv-in-btn">CSV 불러오기</button>
+      <input class="file-in" type="file" id="csv-in" accept=".csv,text/csv" tabindex="-1" aria-hidden="true">
+      <button class="btn btn--sm btn--ghost" type="button" id="del-ex">예시 지우기</button>
+      <button class="btn btn--sm btn--ghost" type="button" id="del-all">모두 지우기</button>
+    </div>
+    <p class="small" id="list-msg" aria-live="polite">기록은 지금 쓰는 브라우저에만 남습니다. 기기를 바꾸거나 브라우저 기록을 지우기 전에 CSV로 내보내 두세요.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="kept-title">
+    <div>
+      <p class="eyebrow">끝난 거래만</p>
+      <h2 class="sec-title" id="kept-title">계획을 지켰을 때와 어겼을 때</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>구분</th><th class="num">건수</th><th class="num">이긴 비율</th><th class="num">평균 R</th><th class="num">손익</th></tr></thead>
+        <tbody id="kept-rows"></tbody>
+      </table>
+    </div>
+    <p class="small" id="kept-note"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="mood-title">
+    <div>
+      <p class="eyebrow">끝난 거래만</p>
+      <h2 class="sec-title" id="mood-title">마음 상태별 결과</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>그때 마음</th><th class="num">건수</th><th class="num">이긴 비율</th><th class="num">평균 R</th></tr></thead>
+        <tbody id="mood-rows"></tbody>
+      </table>
+    </div>
+    <p class="small">한 거래에 마음을 여러 개 고르면 각 줄에 한 번씩 셉니다. 건수가 적을 때는 우연이 크니 다섯 건 넘게 쌓인 줄부터 보세요.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="how-title">
+    <div>
+      <p class="eyebrow">숫자 읽는 법</p>
+      <h2 class="sec-title" id="how-title">R배수로 적는 이유</h2>
+    </div>
+    <p>R은 손절가에 닿았을 때 잃기로 한 금액입니다. 결과를 R로 적으면 금액이 다른 거래끼리도 같은 잣대로 비교됩니다.</p>
+    <pre class="code">1R = |진입가 − 손절가| × 수량
+R배수 = 실제 손익 ÷ 1R
+사서 진입: 손익 = (청산가 − 진입가) × 수량
+팔아서 진입: 손익 = (진입가 − 청산가) × 수량</pre>
+    <p class="small">예: 10,000에 사고 손절가 9,500, 100주면 1R = 50,000. 10,800에 팔면 손익 80,000 = +1.6R. 손절가보다 더 내려간 9,000에 팔면 −100,000 = −2.0R로, 정한 손절보다 두 배를 잃은 거래로 남습니다.</p>
+    <div class="callout">
+      <span class="callout-label">쓰는 요령</span>
+      <p>진입 이유와 손절가는 들어가기 전에 적습니다. 끝난 뒤 적으면 결과에 맞춰 이유가 바뀝니다. 한 달에 한 번 '계획 어김' 거르기만 다시 읽어 보세요.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@chart_nana_</dd>
+      <dt>기준일</dt><dd>2026.11.17</dd>
+      <dt>출처</dt><dd>직접 만든 기록 양식과 계산식 (R배수 = 손익 ÷ 진입가와 손절가 차이 × 수량)</dd>
+    </dl>
+    <p class="foot-note">투자 조언이 아닙니다. 기록과 계산은 돌아보기용이며 매매 신호나 수익을 주지 않습니다. 예시 기록은 지어낸 숫자입니다. 판단과 책임은 본인에게 있습니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var K='chart-trade-journal-v1';
+  var MOODS=['차분','확신','조급','불안','욕심','만회 심리','지루함','남 따라'];
+  function load(){try{var v=localStorage.getItem(K);return v?JSON.parse(v):null}catch(_){return null}}
+  function store(){try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function num(s){s=String(s==null?'':s).replace(/[^0-9.\-]/g,'');return s===''||s==='-'?NaN:parseFloat(s)}
+  function nf(n){if(isNaN(n))return '';var a=Math.abs(n),d=a<100&&a%1?2:(a%1?2:0);return n.toLocaleString('ko-KR',{maximumFractionDigits:d})}
+  function sgn(n,t){return (n>0?'+':n<0?'−':'')+t}
+  function rf(r){var v=Math.round(r*10)/10;return sgn(v,Math.abs(v).toFixed(1))+'R'}
+  function today(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+  var EX=[
+    {id:'ex1',ex:1,date:'2026-11-03',name:'예시 A',dir:'long',entry:10000,stop:9500,plan:11000,qty:100,why:'예시: 거래량 늘며 박스 윗선을 넘어 다음 날 지켜서 진입',exit:10800,kept:'yes',mood:['차분'],memo:'예시: 계획한 청산가 전에 일부 정리. 다음엔 정한 가격까지 기다려 보기'},
+    {id:'ex2',ex:1,date:'2026-11-07',name:'예시 B',dir:'long',entry:20000,stop:19000,plan:22000,qty:50,why:'예시: 많이 빠졌으니 반등하겠지 싶어서',exit:18600,kept:'no',mood:['불안','만회 심리'],memo:'예시: 손절가에서 못 팔고 버티다 더 잃음'},
+    {id:'ex3',ex:1,date:'2026-11-12',name:'예시 C',dir:'long',entry:5000,stop:4800,plan:5600,qty:200,why:'예시: 이동평균선 위에서 눌림 후 다시 오를 때',exit:4800,kept:'yes',mood:['차분'],memo:'예시: 손절가에서 정한 대로 나옴'},
+    {id:'ex4',ex:1,date:'2026-11-14',name:'예시 D',dir:'short',entry:3000,stop:3150,plan:2700,qty:100,why:'예시: 지지선을 깨고 되돌림이 약해서 매도 진입',exit:null,kept:'',mood:['조급'],memo:''}
+  ];
+  var S=load(); if(!S||!Array.isArray(S.t)) S={t:EX.slice()};
+  var edit=null, filter='all';
+
+  function calc(t){
+    var d=t.dir==='short'?-1:1, risk=Math.abs(t.entry-t.stop)*t.qty, o={risk:risk,closed:t.exit!=null&&!isNaN(t.exit)};
+    if(t.plan!=null&&!isNaN(t.plan)&&Math.abs(t.entry-t.stop)>0) o.rr=d*(t.plan-t.entry)/Math.abs(t.entry-t.stop);
+    if(o.closed){o.pnl=d*(t.exit-t.entry)*t.qty;o.r=risk>0?o.pnl/risk:0}
+    return o;
+  }
+
+  /* 폼 */
+  $('f-mood').innerHTML=MOODS.map(function(m){return '<button type="button" data-v="'+m+'" aria-pressed="false">'+m+'</button>'}).join('');
+  function segVal(id){var b=$(id).querySelector('[aria-pressed="true"]');return b?b.dataset.v:''}
+  function segSet(id,v){$(id).querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.v===v)})}
+  $('f-dir').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;segSet('f-dir',b.dataset.v);hint()});
+  $('f-kept').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var on=b.getAttribute('aria-pressed')==='true';segSet('f-kept',on?'':b.dataset.v)});
+  $('f-mood').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')});
+  function read(){
+    var g=function(id){return num($(id).value)};
+    return {date:$('f-date').value||today(),name:$('f-name').value.trim(),dir:segVal('f-dir')||'long',entry:g('f-entry'),stop:g('f-stop'),plan:g('f-plan'),qty:g('f-qty'),
+      why:$('f-why').value.trim(),exit:g('f-exit'),kept:segVal('f-kept'),
+      mood:[].map.call($('f-mood').querySelectorAll('[aria-pressed="true"]'),function(b){return b.dataset.v}),memo:$('f-memo').value.trim()};
+  }
+  function check(t){
+    if(!t.name) return '대상 이름을 넣어 주세요.';
+    if(!(t.entry>0&&t.stop>0&&t.qty>0)) return '진입가·손절가·수량은 0보다 큰 숫자로 넣어 주세요.';
+    if(t.dir==='long'&&t.stop>=t.entry) return '사서 진입하면 손절가가 진입가보다 낮아야 합니다.';
+    if(t.dir==='short'&&t.stop<=t.entry) return '팔아서 진입하면 손절가가 진입가보다 높아야 합니다.';
+    if(!isNaN(t.plan)&&t.plan>0&&(t.dir==='long'?t.plan<=t.entry:t.plan>=t.entry)) return '계획한 청산가가 이익 쪽에 있지 않습니다. 비우거나 고쳐 주세요.';
+    if(!isNaN(t.exit)&&!(t.exit>0)) return '청산가는 0보다 큰 숫자로 넣거나 비워 두세요.';
+    return '';
+  }
+  function hint(){
+    var t=read(),h=$('hint');
+    if(!(t.entry>0&&t.stop>0&&t.qty>0)){h.textContent='진입가·손절가·수량을 넣으면 손절 때 잃을 금액(1R)이 여기 나옵니다.';return}
+    var e=check(Object.assign({},t,{name:t.name||'-'}));
+    if(e){h.textContent=e;return}
+    var c=calc(t),s='1R(손절가에서 잃는 돈) <b>'+nf(c.risk)+'</b>';
+    if(c.rr!=null) s+=' · 계획 손익비 <b>1 : '+c.rr.toFixed(1)+'</b>';
+    if(c.closed) s+=' · 결과 <b>'+rf(c.r)+'</b> ('+sgn(c.pnl,nf(Math.abs(c.pnl)))+')';
+    h.innerHTML=s;
+  }
+  $('tf').addEventListener('input',hint);
+  function fill(t){
+    var v=function(n){return n==null||isNaN(n)?'':nf(n)};
+    $('f-date').value=t.date||today();$('f-name').value=t.name||'';segSet('f-dir',t.dir||'long');
+    $('f-entry').value=v(t.entry);$('f-stop').value=v(t.stop);$('f-plan').value=v(t.plan);$('f-qty').value=v(t.qty);
+    $('f-why').value=t.why||'';$('f-exit').value=v(t.exit);segSet('f-kept',t.kept||'');
+    $('f-mood').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',(t.mood||[]).indexOf(b.dataset.v)>=0)});
+    $('f-memo').value=t.memo||'';hint();
+  }
+  function reset(){edit=null;fill({dir:'long'});$('mode-badge').textContent='새 기록';$('save').textContent='저장하기'}
+  $('clear').addEventListener('click',function(){reset();$('form-msg').textContent=''});
+  $('tf').addEventListener('submit',function(e){
+    e.preventDefault();var t=read(),err=check(t);
+    if(err){$('form-msg').textContent=err;return}
+    ['plan','exit'].forEach(function(k){if(isNaN(t[k]))t[k]=null});
+    if(edit){var i=idx(edit);if(i>=0){t.id=edit;S.t[i]=t}}
+    else{t.id='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);S.t.push(t)}
+    store();var was=!!edit;reset();render();
+    $('form-msg').textContent=was?'고친 내용을 저장했습니다.':'저장했습니다. 아래 목록에 들어갔어요.';
+  });
+  function idx(id){for(var i=0;i<S.t.length;i++)if(S.t[i].id===id)return i;return -1}
+
+  /* 목록 */
+  function sorted(){return S.t.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0})}
+  function render(){
+    var list=sorted().filter(function(t){var c=calc(t);
+      return filter==='all'||(filter==='closed'&&c.closed)||(filter==='open'&&!c.closed)||(filter==='broke'&&t.kept==='no')});
+    $('trades').innerHTML=list.map(function(t){
+      var c=calc(t),dd=(t.date||'').slice(5).replace('-','/');
+      var top='<div class="tr-top"><span class="dt">'+esc(dd)+'</span><b>'+esc(t.name)+'</b><span class="badge">'+(t.dir==='short'?'팔아서 진입':'사서 진입')+'</span>'+
+        (c.closed?(t.kept==='yes'?'<span class="badge">계획 지킴</span>':t.kept==='no'?'<span class="badge badge--warn">계획 어김</span>':''):'<span class="badge">진행 중</span>')+
+        (t.ex?'<span class="badge">예시</span>':'')+'</div>';
+      var nums='<div class="tr-nums"><span><em>진입</em>'+nf(t.entry)+'</span><span><em>손절</em>'+nf(t.stop)+'</span>'+
+        (c.closed?'<span><em>청산</em>'+nf(t.exit)+'</span><span><em>결과</em><b>'+rf(c.r)+'</b></span><span><em>손익</em>'+sgn(c.pnl,nf(Math.abs(c.pnl)))+'</span>'
+                 :'<span><em>1R</em>'+nf(c.risk)+'</span>'+(c.rr!=null?'<span><em>계획 손익비</em>1 : '+c.rr.toFixed(1)+'</span>':''))+'</div>';
+      var why=t.why?'<p class="tr-why">'+esc(t.why)+(t.mood&&t.mood.length?' · 마음: '+esc(t.mood.join(', ')):'')+'</p>':(t.mood&&t.mood.length?'<p class="tr-why">마음: '+esc(t.mood.join(', '))+'</p>':'');
+      var memo=t.memo?'<p class="tr-why">메모: '+esc(t.memo)+'</p>':'';
+      return '<li>'+top+nums+why+memo+'<div class="tr-act"><button class="btn btn--sm btn--ghost" type="button" data-edit="'+esc(t.id)+'">수정</button><button class="btn btn--sm btn--ghost" type="button" data-del="'+esc(t.id)+'">삭제</button></div></li>';
+    }).join('');
+    $('empty').hidden=list.length>0;
+    $('empty').textContent=S.t.length?'이 조건에 맞는 기록이 없습니다.':'아직 기록이 없습니다. 위에서 첫 기록을 남겨 보세요.';
+    $('del-ex').hidden=!S.t.some(function(t){return t.ex});
+    summary();
+  }
+  $('filter').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;filter=b.dataset.f;
+    this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render()});
+  $('trades').addEventListener('click',function(e){
+    var b=e.target.closest('button');if(!b)return;
+    if(b.dataset.edit){var i=idx(b.dataset.edit);if(i<0)return;edit=b.dataset.edit;fill(S.t[i]);
+      $('mode-badge').textContent='수정 중';$('save').textContent='고친 내용 저장';$('form-msg').textContent='';
+      $('form-panel').scrollIntoView({behavior:'smooth',block:'start'});}
+    if(b.dataset.del){var j=idx(b.dataset.del);if(j<0)return;
+      if(!window.confirm('"'+S.t[j].name+'" 기록을 지울까요?'))return;
+      if(edit===b.dataset.del)reset();S.t.splice(j,1);store();render();$('list-msg').textContent='기록 하나를 지웠습니다.'}
+  });
+  $('del-ex').addEventListener('click',function(){S.t=S.t.filter(function(t){return !t.ex});if(edit&&idx(edit)<0)reset();store();render();$('list-msg').textContent='예시 기록을 지웠습니다. 이제 내 기록만 남습니다.'});
+  $('del-all').addEventListener('click',function(){if(!S.t.length)return;if(!window.confirm('기록 '+S.t.length+'건을 모두 지울까요? 되돌릴 수 없습니다.'))return;S.t=[];reset();store();render();$('list-msg').textContent='모두 지웠습니다.'});
+
+  /* 요약 */
+  function group(arr){
+    var n=arr.length,w=0,r=0,p=0;arr.forEach(function(x){var c=calc(x);if(c.pnl>0)w++;r+=c.r;p+=c.pnl});
+    return {n:n,win:n?w/n*100:0,avg:n?r/n:0,pnl:p};
+  }
+  function put(id,v,u){$(id).innerHTML=v+(u?'<small>'+u+'</small>':'')}
+  function summary(){
+    var closed=S.t.filter(function(t){return calc(t).closed}),open=S.t.length-closed.length,g=group(closed);
+    var onlyEx=S.t.length>0&&S.t.every(function(t){return t.ex});
+    $('sum-badge').textContent=onlyEx?'예시 기록 기준':'끝난 거래 기준';
+    if(!g.n){$('o-avg').textContent='-';put('o-n','0','건');$('o-win').textContent='-';$('o-pnl').textContent='-';$('o-kept').textContent='-';
+      $('o-open').textContent=open?'진행 중 '+open+'건':'';$('o-msg').textContent='청산가를 넣은 거래가 생기면 요약이 나옵니다.';}
+    else{
+      $('o-avg').innerHTML=rf(g.avg).replace('R','<small>R</small>');
+      put('o-n',g.n,'건');$('o-open').textContent=open?'진행 중 '+open+'건':'진행 중 없음';
+      put('o-win',g.win.toFixed(0),'%');put('o-pnl',sgn(g.pnl,nf(Math.abs(g.pnl))),'');
+      var marked=closed.filter(function(t){return t.kept}),kept=closed.filter(function(t){return t.kept==='yes'}).length;
+      put('o-kept',marked.length?(kept/marked.length*100).toFixed(0):'-',marked.length?'%':'');
+      var m='한 번 거래할 때마다 평균 '+rf(g.avg)+'입니다. ';
+      m+=g.avg>0?'손절 한 번 금액보다 평균적으로 더 벌었다는 뜻입니다.':g.avg<0?'손절 한 번 금액의 '+Math.abs(g.avg).toFixed(1)+'배만큼 평균적으로 잃었다는 뜻입니다.':'평균적으로 본전입니다.';
+      if(g.n<10) m+=' 아직 '+g.n+'건이라 우연이 큽니다.';
+      $('o-msg').textContent=m;
+    }
+    var rows=[['계획 지킴',closed.filter(function(t){return t.kept==='yes'})],['계획 어김',closed.filter(function(t){return t.kept==='no'})],['표시 안 함',closed.filter(function(t){return !t.kept})]];
+    $('kept-rows').innerHTML=rows.filter(function(r,i){return i<2||r[1].length}).map(function(r){var x=group(r[1]);
+      return '<tr><td class="nowrap">'+r[0]+'</td><td class="num">'+x.n+'</td><td class="num">'+(x.n?x.win.toFixed(0)+'%':'-')+'</td><td class="num">'+(x.n?rf(x.avg):'-')+'</td><td class="num">'+(x.n?sgn(x.pnl,nf(Math.abs(x.pnl))):'-')+'</td></tr>'}).join('');
+    var a=group(rows[0][1]),b=group(rows[1][1]);
+    $('kept-note').textContent=(a.n&&b.n)?'계획을 지킨 거래는 평균 '+rf(a.avg)+', 어긴 거래는 평균 '+rf(b.avg)+'입니다. 차이 '+Math.abs(a.avg-b.avg).toFixed(1)+'R.':'계획 지킴과 어김이 둘 다 쌓이면 차이가 여기 나옵니다.';
+    var mr=MOODS.map(function(m){return [m,closed.filter(function(t){return (t.mood||[]).indexOf(m)>=0})]}).filter(function(r){return r[1].length});
+    $('mood-rows').innerHTML=mr.length?mr.map(function(r){var x=group(r[1]);
+      return '<tr><td class="nowrap">'+r[0]+'</td><td class="num">'+x.n+'</td><td class="num">'+x.win.toFixed(0)+'%</td><td class="num">'+rf(x.avg)+'</td></tr>'}).join('')
+      :'<tr><td colspan="4" class="small">끝난 거래에 마음을 고르면 여기 나옵니다.</td></tr>';
+  }
+
+  /* CSV */
+  var COLS=['날짜','대상','방향','진입가','손절가','계획한 청산가','수량','진입 이유','청산가','계획대로','마음','메모','R배수','손익'];
+  function cq(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+  $('csv-out').addEventListener('click',function(){
+    if(!S.t.length){$('list-msg').textContent='내보낼 기록이 없습니다.';return}
+    var lines=[COLS.join(',')].concat(sorted().reverse().map(function(t){var c=calc(t);
+      return [t.date,t.name,t.dir==='short'?'팔아서 진입':'사서 진입',t.entry,t.stop,t.plan==null?'':t.plan,t.qty,t.why,t.exit==null?'':t.exit,
+        t.kept==='yes'?'지켰다':t.kept==='no'?'어겼다':'',(t.mood||[]).join('/'),t.memo,c.closed?c.r.toFixed(2):'',c.closed?Math.round(c.pnl*100)/100:''].map(cq).join(',')}));
+    try{
+      var blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);a.download='trade-journal-'+today().replace(/-/g,'')+'.csv';document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+      $('list-msg').textContent=S.t.length+'건을 CSV 파일로 내보냈습니다. 엑셀이나 구글 시트에서 열 수 있어요.';
+    }catch(_){$('list-msg').textContent='이 브라우저에서는 파일 저장이 막혀 있습니다.'}
+  });
+  function parse(text){
+    var rows=[],row=[],f='',q=false,i=0;text=text.replace(/^﻿/,'');
+    for(;i<text.length;i++){var ch=text[i];
+      if(q){if(ch==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=ch}
+      else if(ch==='"')q=true;else if(ch===','){row.push(f);f=''}
+      else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}
+      else f+=ch}
+    if(f!==''||row.length){row.push(f);rows.push(row)}
+    return rows.filter(function(r){return r.some(function(c){return c.trim()!==''})});
+  }
+  $('csv-in-btn').addEventListener('click',function(){$('csv-in').click()});
+  $('csv-in').addEventListener('change',function(){
+    var file=this.files&&this.files[0];if(!file)return;var rd=new FileReader();
+    rd.onload=function(){
+      var rows=parse(String(rd.result)),h=rows.shift()||[],at=function(n){return h.indexOf(n)},ok=0,bad=0;
+      if(at('대상')<0||at('진입가')<0){$('list-msg').textContent='이 일지에서 내보낸 CSV 형식이 아닙니다.';return}
+      rows.forEach(function(r){var g=function(n){var k=at(n);return k<0?'':(r[k]||'').trim()};
+        var t={date:/^\d{4}-\d{2}-\d{2}$/.test(g('날짜'))?g('날짜'):today(),name:g('대상'),dir:g('방향')==='팔아서 진입'?'short':'long',entry:num(g('진입가')),stop:num(g('손절가')),
+          plan:num(g('계획한 청산가')),qty:num(g('수량')),why:g('진입 이유'),exit:num(g('청산가')),kept:g('계획대로')==='지켰다'?'yes':g('계획대로')==='어겼다'?'no':'',
+          mood:g('마음')?g('마음').split('/').filter(function(m){return MOODS.indexOf(m)>=0}):[],memo:g('메모')};
+        if(check(t)){bad++;return}
+        ['plan','exit'].forEach(function(k){if(isNaN(t[k]))t[k]=null});
+        t.id='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);S.t.push(t);ok++});
+      store();render();$('list-msg').textContent=ok+'건을 불러왔습니다.'+(bad?' 숫자가 맞지 않는 '+bad+'건은 건너뛰었습니다.':'');
+    };
+    rd.readAsText(file,'utf-8');this.value='';
+  });
+
+  reset();render();
+})();
+</script>
+</body>
+</html>
