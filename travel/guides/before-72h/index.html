@@ -1,0 +1,501 @@
+<!doctype html>
+<!-- 견본: 요약서(가이드). data-account 를 edu | chart | travel 중 하나로 바꾼다.
+     PDF 는 브라우저 인쇄(A4, 배경 그래픽 켬)로 뽑는다. 표지가 첫 장을 꽉 채운다. -->
+<html lang="ko" data-account="travel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>출국 전 72시간 순서</title>
+<meta name="description" content="D-3부터 공항 도착까지 서류·체크인·짐·출발 시각을 시간 순서로 정리한 요약서">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+/* 요약서 배치: 화면에서는 표지가 첫 화면의 대부분을 차지하고 제목이 아래에 놓인다 */
+.cover--page .cover-in{min-height:min(64vh,520px)}
+.cover--page .cover-title{margin-top:auto;padding-top:var(--s-8)}
+.guide{font-size:17px}
+.step-head{display:flex;flex-direction:column;gap:2px;padding-top:var(--s-4);border-top:2px solid var(--ink)}
+
+/* 인쇄(A4): 표지는 여백 없는 한 장, 본문은 여백 있는 쪽 */
+@page{size:A4;margin:18mm 17mm 20mm}
+@page cover{size:A4;margin:0}
+@media print{
+  :root{--bg:#ffffff;--gutter:0px;--wrap:none}
+  body{font-size:10.5pt}
+  .guide{font-size:10.5pt}
+  .cover--page{page:cover;break-after:page;height:297mm;overflow:hidden}
+  .cover--page .cover-in{box-sizing:border-box;height:297mm;min-height:0;max-width:none;padding:20mm 18mm 18mm}
+  .cover--page .cover-top{font-size:11pt}
+  .cover--page .cover-kind{font-size:10pt;padding:1mm 3mm}
+  .cover--page .cover-title{font-size:40pt;max-width:150mm}
+  .cover--page .cover-desc{font-size:13pt;margin-top:5mm}
+  .cover--page .cover-meta{font-size:10pt;margin-top:14mm;padding-top:4mm}
+  .main{padding-block:0 8mm;gap:9mm}
+  .sec{gap:3.5mm;break-inside:avoid}
+  .sec-title{font-size:15pt}
+  .lead{font-size:12pt}
+  .step-head,.sec-title,.sub-title,.eyebrow{break-after:avoid}
+  pre.code,.callout,table,.quote,.check li,.toc li{break-inside:avoid}
+  pre.code{font-size:9.5pt}
+  table{font-size:10pt}
+  .toc a span{display:none}
+  .foot{padding-block:5mm 0;font-size:9pt;break-inside:avoid}
+  a{text-decoration:none}
+  .sec--long{break-inside:auto}
+}
+/* 이 파일만의 배치 */
+.tm td:first-child{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;width:6.2em}
+</style>
+</head>
+<body>
+
+<header class="cover cover--page">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@travel_junn_</b><span>해외여행 준비</span></p>
+      <p class="cover-kind">요약서</p>
+    </div>
+    <h1 class="cover-title">출국 전 72시간 순서</h1>
+    <p class="cover-desc">D-3부터 공항 도착까지 할 일을 시간 순서로 정리합니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.17</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+      <div><dt>분량</dt><dd>읽는 데 6분</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main guide">
+
+  <section class="sec">
+    <p class="lead">출국 사흘 전부터는 새로 준비할 수 있는 일이 줄고, <strong>확인해야 할 일</strong>이 늘어납니다. 그래서 이 순서는 '언제까지 무엇을 확인하나'로 짰습니다.</p>
+    <div class="callout callout--accent">
+      <span class="callout-label">한눈에</span>
+      <ul class="bullets">
+        <li>D-3: 서류와 입국 조건. 여기서 문제가 보이면 아직 고칠 시간이 있습니다.</li>
+        <li>D-2: 온라인 체크인이 열리는 때. 국제선은 대개 출발 48시간 전부터입니다(아시아나 기준).</li>
+        <li>D-1: 짐 무게·배터리·액체류 점검, 집에서 나설 시각 정하기.</li>
+        <li>당일: 수속 마감(대개 출발 1시간 전)보다 앞서 줄에 서 있는 것이 목표입니다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <nav class="sec" aria-labelledby="toc-title">
+    <h2 class="eyebrow" id="toc-title">목차</h2>
+    <ol class="toc">
+      <li><a href="#s1">D-3 서류와 입국 조건<span>72~48시간 전</span></a></li>
+      <li><a href="#s2">D-2 체크인과 연락 수단<span>48~24시간 전</span></a></li>
+      <li><a href="#s3">D-1 짐과 출발 시각<span>24시간 전~</span></a></li>
+      <li><a href="#s4">당일 집에서 공항까지<span>출발 당일</span></a></li>
+      <li><a href="#s5">공항에서 출국까지<span>도착 후</span></a></li>
+      <li><a href="#s6">마지막 확인<span>체크리스트</span></a></li>
+    </ol>
+  </nav>
+
+  <section class="sec" id="s1">
+    <div class="step-head">
+      <p class="eyebrow">1단계 · 72~48시간 전</p>
+      <h2 class="sec-title">D-3 서류와 입국 조건</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="tm">
+        <thead><tr><th>할 일</th><th>확인할 점</th></tr></thead>
+        <tbody>
+          <tr><td>여권</td><td>실물이 손에 있는지, 남은 유효기간이 목적지 요구보다 긴지. 나라마다 요구 기간이 다릅니다.</td></tr>
+          <tr><td>입국 조건</td><td>무비자 체류 기간, 전자여행허가(미국 ESTA 등)·입국 신고 사전 등록이 필요한지. 외교부 해외안전여행의 국가별 정보와 해당국 공식 사이트로 확인.</td></tr>
+          <tr><td>예약 확인</td><td>항공권 이름 철자가 여권과 같은지, 숙소 첫날 체크인 시간과 주소.</td></tr>
+          <tr><td>보험</td><td>여행자보험 가입 여부와 보장 기간이 여행 날짜와 맞는지. 증권과 24시간 긴급 연락처를 휴대폰에 저장.</td></tr>
+          <tr><td>현지 소식</td><td>태풍·폭설·파업·공항 공사처럼 일정이 밀릴 일이 있는지.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout--warn">
+      <span class="callout-label">주의</span>
+      <p>전자여행허가는 신청 뒤 결과가 바로 나오지 않을 수 있습니다. 아직 신청 전이라면 D-3 에 가장 먼저 처리할 일입니다.</p>
+    </div>
+  </section>
+
+  <section class="sec" id="s2">
+    <div class="step-head">
+      <p class="eyebrow">2단계 · 48~24시간 전</p>
+      <h2 class="sec-title">D-2 체크인과 연락 수단</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="tm">
+        <thead><tr><th>할 일</th><th>확인할 점</th></tr></thead>
+        <tbody>
+          <tr><td>온라인 체크인</td><td>아시아나 국제선은 출발 48시간 전부터 1시간 전까지(미주·사이판 노선은 24시간 전부터). 다른 항공사는 예약 안내 메일로 확인. 여권 정보를 넣어야 탑승권이 나옵니다.</td></tr>
+          <tr><td>좌석·식사</td><td>동행과 붙어 앉기, 아이 식사 같은 요청은 이때 확인.</td></tr>
+          <tr><td>데이터</td><td>로밍·eSIM·현지 유심 중 정하고, eSIM 은 휴대폰이 지원하는지 먼저.</td></tr>
+          <tr><td>돈</td><td>해외 결제 되는 카드 두 장, 현금은 첫날 쓸 만큼. <a class="link" href="../../apps/currency-split/">환전 금액 나누기</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="s3">
+    <div class="step-head">
+      <p class="eyebrow">3단계 · 24시간 전부터</p>
+      <h2 class="sec-title">D-1 짐과 출발 시각</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="tm">
+        <thead><tr><th>할 일</th><th>확인할 점</th></tr></thead>
+        <tbody>
+          <tr><td>짐 무게</td><td>위탁·기내 가방을 저울에 달아 허용 무게와 비교. 집 저울 차이를 생각해 조금 남겨 둡니다.</td></tr>
+          <tr><td>보조배터리</td><td>1인 2개까지, 160Wh 이하만, 기내 가방에만(위탁 불가). 100Wh 초과는 항공사 승인 필요.</td></tr>
+          <tr><td>액체류</td><td>기내 가방에는 100ml 이하 용기만, 1L 투명 지퍼백 1개에.</td></tr>
+          <tr><td>서류 사본</td><td>여권 사진면, 항공권, 숙소, 보험을 휴대폰과 종이 한 장에.</td></tr>
+          <tr><td>나설 시각</td><td>출발 시각에서 거꾸로 계산해 알람 두 개. <a class="link" href="../../apps/airport-backward/">공항 도착 시각 역산기</a></td></tr>
+          <tr><td>충전</td><td>휴대폰·보조배터리 완충, 멀티 어댑터는 가방 바깥 주머니에.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">짐·배터리·액체류는 한 화면에서 숫자로 점검할 수 있습니다: <a class="link" href="../../apps/baggage-check/">수하물·배터리 점검표</a></p>
+  </section>
+
+  <section class="sec" id="s4">
+    <div class="step-head">
+      <p class="eyebrow">4단계 · 출발 당일</p>
+      <h2 class="sec-title">당일 집에서 공항까지</h2>
+    </div>
+    <ul class="bullets">
+      <li>나서기 전: 여권·휴대폰·지갑 세 가지를 손으로 만져 확인합니다.</li>
+      <li>이동 중: 항공사 앱에서 출발 시각 변경·게이트 공지를 한 번 봅니다.</li>
+      <li>인천공항이라면 터미널부터. 제1·제2터미널이 떨어져 있어 잘못 내리면 시간이 더 듭니다. <a class="link" href="../../dashboards/icn-airlines/">항공사별 터미널 찾기</a></li>
+    </ul>
+  </section>
+
+  <section class="sec" id="s5">
+    <div class="step-head">
+      <p class="eyebrow">5단계 · 공항 도착 후</p>
+      <h2 class="sec-title">공항에서 출국까지</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="tm">
+        <thead><tr><th>순서</th><th>알아 둘 점</th></tr></thead>
+        <tbody>
+          <tr><td>짐 부치기</td><td>온라인 체크인을 했어도 위탁 짐은 출발 60분 전까지 전용 카운터에서(아시아나 국제선 기준). 대한항공 국제선도 체크인은 출발 1시간 전 마감.</td></tr>
+          <tr><td>보안검색</td><td>보조배터리·액체류 지퍼백은 꺼내기 쉬운 곳에.</td></tr>
+          <tr><td>출국심사</td><td>주민등록증이 있는 국민은 자동출입국심사를 사전등록 없이 이용. 만 7~14세 미만 아이는 법정대리인과 함께 사전등록해야 자동심사를 쓸 수 있습니다.</td></tr>
+          <tr><td>탑승구</td><td>대한항공 국제선은 출발 35분 전 탑승 시작, 10분 전 마감. 탑승권의 탑승 시각을 기준으로 움직입니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec" id="s6">
+    <div class="step-head">
+      <p class="eyebrow">마무리</p>
+      <h2 class="sec-title">마지막 확인</h2>
+    </div>
+    <ul class="check">
+      <li><label><input type="checkbox" id="c1"><span>여권 실물, 목적지 입국 조건 확인<small>전자여행허가·사전 등록 포함</small></span></label></li>
+      <li><label><input type="checkbox" id="c2"><span>온라인 체크인 또는 카운터 수속 계획</span></label></li>
+      <li><label><input type="checkbox" id="c3"><span>보조배터리 2개 이하, 기내 가방에</span></label></li>
+      <li><label><input type="checkbox" id="c4"><span>액체류 100ml 용기, 지퍼백 1개</span></label></li>
+      <li><label><input type="checkbox" id="c5"><span>위탁 가방 무게가 허용 안</span></label></li>
+      <li><label><input type="checkbox" id="c6"><span>집에서 나설 시각에 알람 두 개</span></label></li>
+      <li><label><input type="checkbox" id="c7"><span>서류 사본을 휴대폰과 종이에</span></label></li>
+    </ul>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@travel_junn_</dd>
+      <dt>기준일</dt><dd>2026.11.17</dd>
+      <dt>출처</dt><dd>아시아나항공 '온라인 체크인', 대한항공 '국제선 탑승 수속', 인천국제공항 '제한물품'·'자동출입국심사' 안내, 국토교통부 보조배터리 기준(2026.4.20 시행). 2026.11.17 확인.</dd>
+    </dl>
+    <p class="foot-note">입국 조건, 항공사 수속 시간, 보안 규정은 바뀔 수 있습니다. 출발 전 공식 안내 확인: 이용 항공사, 인천공항, 외교부 해외안전여행.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+</body>
+</html>
