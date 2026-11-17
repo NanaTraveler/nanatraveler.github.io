@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ko" data-account="edu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>구구단 달리기 · 아이랑 AI로 만드는 툴 8회</title>
+<meta name="description" content="단과 단계를 골라 구구단 문제를 풀며 시간을 재고 내 기록과만 비교하는 도구, 아이와 30분 만에 만드는 순서와 프롬프트">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+[hidden]{display:none!important}
+.back{font-size:var(--t-13);color:var(--ink-2)}
+.back a{color:var(--ink-2);text-underline-offset:3px}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.btn--sm{min-height:36px;padding:0 var(--s-3);font-size:var(--t-15)}
+.steps{display:flex;flex-direction:column;gap:6px;padding-left:1.4em;list-style:decimal}
+.steps li::marker{color:var(--ink-3);font-variant-numeric:tabular-nums}
+.make{display:flex;flex-direction:column;gap:var(--s-5)}
+.make > div{display:flex;flex-direction:column;gap:var(--s-3)}
+.prompt{display:flex;flex-direction:column;gap:var(--s-2)}
+.prompt pre.code{font-size:var(--t-15)}
+.prompt .btn{align-self:flex-end}
+.tt td:first-child{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+.lv td:first-child{white-space:nowrap;font-weight:700}
+.mine{display:flex;flex-direction:column;gap:var(--s-2);margin-top:var(--s-5);padding-top:var(--s-4);border-top:1px solid var(--line)}
+.mine-title{font-weight:700}
+.log{border-top:1px solid var(--ink)}
+.log li{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-2) 0;border-bottom:1px solid var(--line)}
+.log .dt{flex:none;width:3.6em;font-size:var(--t-13);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.log .tx{flex:1;min-width:0}
+.log .tx small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.log .tm{flex:none;font-weight:700;font-variant-numeric:tabular-nums}
+.log button{flex:none;border:0;background:none;color:var(--ink-3);font:400 var(--t-15)/1 var(--font);cursor:pointer;padding:4px}
+.pick{display:flex;flex-direction:column;gap:var(--s-2);margin-bottom:var(--s-4)}
+.pick .field-label{margin-top:var(--s-2)}
+.pick .field-label:first-child{margin-top:0}
+.board{display:flex;flex-direction:column;gap:var(--s-3);padding:var(--s-4) 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.board-top{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);font-size:var(--t-15);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.board-top b{color:var(--ink)}
+.q{font-size:var(--t-40);font-weight:800;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums;min-height:1.15em}
+.ans{display:flex;align-items:center;min-height:52px;padding:0 var(--s-4);border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface);font-size:var(--t-28);font-weight:700;font-variant-numeric:tabular-nums}
+.ans:empty::before{content:"답";font-size:var(--t-16);font-weight:400;color:var(--ink-3)}
+.bar{height:12px;border:1px solid var(--ink);border-radius:var(--r-1);overflow:hidden;background:var(--surface)}
+.bar i{display:block;height:100%;width:0;background:var(--ink)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-2)}
+.pad .btn{width:100%;font-size:var(--t-22);font-variant-numeric:tabular-nums}
+.pad .btn[data-k="del"],.pad .btn[data-k="ok"]{font-size:var(--t-16);white-space:nowrap;padding:0 var(--s-2)}
+.pad .btn:disabled,.go .btn:disabled{opacity:.35;cursor:default}
+.go{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-2)}
+.go .btn{width:100%}
+.mt3{margin-top:var(--s-3)} .mt4{margin-top:var(--s-4)}
+.opt{display:inline-flex;gap:var(--s-2);align-items:center;font-size:var(--t-15);cursor:pointer}
+.opt input{width:20px;height:20px;margin:0;accent-color:var(--ink)}
+.wrong{display:flex;flex-wrap:wrap;gap:6px}
+.wrong span{border:1px solid var(--line-2);border-radius:var(--r-1);padding:1px 8px;font-size:var(--t-15);font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@hi_jun_baby</b><span>아이와 AI 육아</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">구구단 달리기</h1>
+    <p class="cover-desc">단과 단계를 골라 풀고 내 지난 기록과만 비교합니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.17</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+      <div><dt>회차</dt><dd>아이랑 AI로 만드는 툴 8회</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="stack">
+    <p class="back"><a href="../">아이랑 AI로 만드는 툴</a> · 8회</p>
+    <p class="lead">한 단을 순서대로 푸는 것부터 빈칸 거꾸로 채우기까지 네 단계로 나눴습니다. 다 풀면 걸린 시간과 맞힌 개수가 남고, 틀린 문제만 모아 다시 풀 수 있어요. <a class="link" href="../../../magnet/first-app-30min/">첫 AI 앱(구구단 게임)</a>을 만들어 봤다면 이번 회차가 그 완성판입니다.</p>
+  </div>
+
+  <section class="panel" aria-labelledby="tool-title">
+    <div class="panel-head">
+      <h2 id="tool-title">완성본 써 보기</h2>
+      <span class="badge">이 기기에만 저장</span>
+    </div>
+
+    <div class="pick">
+      <span class="field-label" id="l-stage">단계</span>
+      <div class="seg" id="stages" role="group" aria-labelledby="l-stage">
+        <button type="button" data-s="1" aria-pressed="true">1 순서대로</button>
+        <button type="button" data-s="2" aria-pressed="false">2 섞어서</button>
+        <button type="button" data-s="3" aria-pressed="false">3 여러 단</button>
+        <button type="button" data-s="4" aria-pressed="false">4 빈칸</button>
+      </div>
+      <span class="field-label" id="l-dan">몇 단?</span>
+      <div class="seg" id="dans" role="group" aria-labelledby="l-dan"></div>
+      <p class="small" id="stage-help"></p>
+    </div>
+
+    <div class="board">
+      <div class="board-top"><span id="b-set">7단 · 1단계</span><span><b id="b-n">0/9</b> · <span id="b-time">0.0초</span></span></div>
+      <div class="bar" aria-hidden="true"><i id="b-bar"></i></div>
+      <p class="q" id="q" aria-live="polite">준비</p>
+      <div class="ans" id="ans" role="status" aria-label="내가 넣은 답"></div>
+      <p class="small" id="msg" aria-live="polite">준비되면 출발을 누르세요.</p>
+    </div>
+
+    <div class="pad mt4" id="pad" aria-label="숫자 누르기">
+      <button class="btn btn--ghost" type="button" data-k="1">1</button><button class="btn btn--ghost" type="button" data-k="2">2</button><button class="btn btn--ghost" type="button" data-k="3">3</button>
+      <button class="btn btn--ghost" type="button" data-k="4">4</button><button class="btn btn--ghost" type="button" data-k="5">5</button><button class="btn btn--ghost" type="button" data-k="6">6</button>
+      <button class="btn btn--ghost" type="button" data-k="7">7</button><button class="btn btn--ghost" type="button" data-k="8">8</button><button class="btn btn--ghost" type="button" data-k="9">9</button>
+      <button class="btn btn--ghost" type="button" data-k="del" aria-label="한 글자 지우기">지우기</button><button class="btn btn--ghost" type="button" data-k="0">0</button><button class="btn" type="button" data-k="ok">확인</button>
+    </div>
+    <div class="go mt3">
+      <button class="btn btn--accent" type="button" id="start">출발</button>
+      <button class="btn btn--ghost" type="button" id="stop" disabled>그만하기</button>
+    </div>
+    <p class="small mt3">키보드가 있으면 숫자와 엔터 키로도 풀 수 있어요.</p>
+
+    <div class="mine" id="wrong-box" hidden>
+      <p class="mine-title">이번 판에 틀린 문제</p>
+      <div class="wrong" id="wrong"></div>
+      <div><button class="btn btn--sm btn--ghost" type="button" id="retry">틀린 문제만 다시 풀기</button></div>
+      <p class="small">다시 풀기는 연습이라 기록에 남지 않아요.</p>
+    </div>
+
+    <div class="mine">
+      <p class="mine-title" id="best-title">내 최고 기록</p>
+      <p class="small" id="best">아직 기록이 없어요.</p>
+    </div>
+
+    <div class="mine">
+      <p class="mine-title" id="log-title">달리기 기록</p>
+      <ol class="log" id="log"></ol>
+      <p class="small" id="log-empty">아직 기록이 없어요. 첫 달리기를 해 보세요.</p>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="lv-title">
+    <div>
+      <p class="eyebrow">단계</p>
+      <h2 class="sec-title" id="lv-title">네 단계는 이렇게 다릅니다</h2>
+    </div>
+    <div class="table-wrap"><table class="lv"><thead><tr><th>단계</th><th>문제 모양</th></tr></thead><tbody>
+      <tr><td>1 순서대로</td><td>고른 단을 ×1부터 ×9까지 차례로. 9문제.</td></tr>
+      <tr><td>2 섞어서</td><td>고른 단의 아홉 문제를 순서만 섞어서.</td></tr>
+      <tr><td>3 여러 단</td><td>두 단 이상을 골라 섞은 것 중 10문제. 같은 문제는 한 판에 한 번만.</td></tr>
+      <tr><td>4 빈칸</td><td>6 × □ = 42 처럼 곱하는 수를 거꾸로 찾기. 한 단이면 9문제, 여러 단이면 10문제.</td></tr>
+    </tbody></table></div>
+    <p class="small">어느 단계로 언제 넘어갈지는 아이와 정하세요. 예를 들어 "다 맞힌 날이 두 번이면 다음 단계"처럼 우리 집 규칙을 정해 두면 됩니다.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="make-title">
+    <div>
+      <p class="eyebrow">30분</p>
+      <h2 class="sec-title" id="make-title">아이랑 만드는 순서</h2>
+    </div>
+    <div class="make">
+      <div>
+        <h3 class="sub-title">1. 아이가 정할 질문</h3>
+        <p class="small">답은 아이가 정하고, 부모는 받아 적기만 합니다. 정한 답을 아래 프롬프트의 [ ] 자리에 넣어요.</p>
+        <ol class="steps"><li>단계는 몇 개로 할까? 단계마다 문제 모양은 어떻게 다르게 할까?</li><li>한 판에 몇 문제를 낼까?</li><li>틀리면 어떻게 할까? 정답을 보여 주고 넘어갈까, 맞힐 때까지 다시 낼까?</li><li>다 풀면 화면에 뭐라고 나올까?</li><li>기록은 무엇으로 남길까? 걸린 시간, 맞힌 개수, 둘 다?</li></ol>
+      </div>
+      <div>
+        <h3 class="sub-title">2. 챗GPT 등에 붙여 넣을 프롬프트</h3>
+        <p class="small">첫 AI 앱 때 만든 구구단 게임 코드가 있으면 프롬프트 맨 앞에 그 코드를 붙이고 "이 코드에 아래 기능을 더해 줘"라고 시작해도 됩니다.</p>
+        <div class="prompt"><pre class="code" id="p8">초등학생이 쓰는 '구구단 달리기'를 HTML 파일 하나로 만들어 줘. 브라우저에서 바로 열리게 하고, 설명 없이 코드만 줘.
+
+기능:
+1. 단(2~9단)을 버튼으로 고른다. 단계 버튼도 둔다: [단계 이름과 문제 모양].
+2. '출발'을 누르면 시간이 0.1초 단위로 올라가고, 문제를 하나씩 크게 보여 준다. 한 판은 [문제 수]문제.
+3. 화면에 0~9 숫자 버튼과 '지우기', '확인'을 만든다. 키보드 숫자와 엔터로도 된다.
+4. 틀리면 [틀렸을 때 할 일].
+5. 마지막 문제를 풀면 시간을 멈추고 "[다 풀었을 때 말]"과 걸린 시간, 맞힌 개수를 보여 준다.
+6. 단·단계마다 내 최고 기록을 [기록으로 남길 것] 기준으로 보여 주고, 새 기록이면 몇 초 빨라졌는지 알려 준다.
+7. 틀린 문제만 모아 다시 푸는 버튼을 만든다.
+8. 기록은 이 브라우저에만 저장(localStorage)하고, 이름이나 학교 같은 개인정보는 받지 마.
+9. 그림 문자(이모지) 대신 글자와 네모 칸으로만 꾸며 줘.</pre><button class="btn btn--ghost btn--sm" type="button" data-copy="p8">복사</button></div>
+      </div>
+      <div>
+        <h3 class="sub-title">3. 에러가 나면 이렇게 물어보기</h3>
+        <div class="prompt"><pre class="code" id="p8e0">정답을 넣었는데 틀렸다고 나와. 입력한 글자를 숫자로 바꿔서 정답과 비교하도록 고친 코드 전체를 다시 줘.</pre><button class="btn btn--ghost btn--sm" type="button" data-copy="p8e0">복사</button></div>
+        <div class="prompt"><pre class="code" id="p8e1">한 판에 같은 문제가 두 번 나와. 문제를 섞을 때 겹치지 않게 뽑도록 고친 코드 전체를 다시 줘.</pre><button class="btn btn--ghost btn--sm" type="button" data-copy="p8e1">복사</button></div>
+        <div class="prompt"><pre class="code" id="p8e2">마지막 문제를 풀어도 시간이 계속 올라가. 마지막 문제를 풀면 타이머를 멈추고 걸린 시간을 보여 주도록 고친 코드 전체를 다시 줘.</pre><button class="btn btn--ghost btn--sm" type="button" data-copy="p8e2">복사</button></div>
+      </div>
+      <div>
+        <h3 class="sub-title">4. 30분 시간표</h3>
+        <div class="table-wrap"><table class="tt"><thead><tr><th>시간</th><th>할 일</th></tr></thead><tbody><tr><td>0~5분</td><td>완성본으로 아이가 자신 있는 단을 1단계로 한 번 달려 본다.</td></tr><tr><td>5~12분</td><td>질문 5개에 답하고 프롬프트 [ ]를 채운다.</td></tr><tr><td>12~20분</td><td>챗GPT에 붙여 넣고 gugudan-race.html 로 저장해 연다.</td></tr><tr><td>20~27분</td><td>아이가 만든 게임으로 한 판 풀어 보고, 이상한 점 하나를 에러 문장으로 고친다.</td></tr><tr><td>27~30분</td><td>다음 단계로 넘어갈 우리 집 규칙을 하나 정하고 끝.</td></tr></tbody></table></div>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="callout-label">개인정보</span>
+      <p>이 페이지는 아이 개인정보를 받지 않습니다. 고른 단·단계와 걸린 시간, 맞힌 개수만 지금 쓰는 기기의 브라우저에 남고, 브라우저 기록을 지우면 함께 사라져요.</p>
+    </div>
+    <div class="callout">
+      <span class="callout-label">쓰는 요령</span>
+      <p>형제끼리 시간을 겨루기보다 각자 지난 기록과만 비교하게 두세요. 빠르게 푸는 것보다 다 맞힌 판을 먼저 칭찬해 주면 서두르다 틀리는 일이 줄어듭니다.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@hi_jun_baby</dd>
+      <dt>기준일</dt><dd>2026.11.17</dd>
+      <dt>출처</dt><dd>직접 만든 예시 도구와 프롬프트(외부 자료 인용 없음)</dd>
+    </dl>
+    <p class="foot-note">아이 이름·사진·학교 같은 개인정보는 받지도 저장하지도 않습니다. 저장은 이 기기 브라우저 안에만 되고, 학습·성적 효과를 약속하지 않습니다. 아이마다 푸는 속도와 반응은 다를 수 있습니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+<script>
+(function(){
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}}
+function md(t){var d=new Date(t);return (d.getMonth()+1)+"/"+d.getDate()}
+function sec1(ms){return (ms/1000).toFixed(1)+"초"}
+var $=function(id){return document.getElementById(id)};
+var K="aitools-times-table-race";
+var S=load(K,null);
+if(!S||!Array.isArray(S.dan)||!Array.isArray(S.log))S={stage:1,dan:[2],log:[]};
+var HELP={1:"한 단을 고르세요. ×1부터 ×9까지 차례로 9문제.",2:"한 단을 고르세요. 아홉 문제를 순서만 섞어요.",3:"두 단 이상 고르세요. 섞어서 10문제.",4:"한 단 이상 고르세요. 6 × □ = 42 처럼 빈칸을 채워요."};
+var run=null,tick=null,input="",lastWrong=[];
+function multi(){return S.stage>=3}
+function norm(){S.dan=S.dan.filter(function(d){return d>=2&&d<=9}).sort(function(a,b){return a-b});
+  if(!multi()&&S.dan.length!==1)S.dan=[S.dan[0]||2];
+  if(S.stage===3&&S.dan.length<2){var x=S.dan[0]||2;S.dan=[x,x===9?8:x+1].sort(function(a,b){return a-b})}
+  if(!S.dan.length)S.dan=[2]}
+function key(){return S.stage+":"+S.dan.join(",")}
+function label(st,dan){return dan.join("·")+"단 · "+st+"단계"}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function make(){
+  var pool=[];S.dan.forEach(function(d){for(var m=1;m<=9;m++)pool.push({a:d,b:m,blank:S.stage===4})});
+  if(S.stage===1)return pool;
+  return shuffle(pool).slice(0,Math.min(10,pool.length));
+}
+function best(k){var b=null;S.log.forEach(function(x){if(x.key!==k)return;if(!b||x.ok>b.ok||(x.ok===b.ok&&x.ms<b.ms))b=x});return b}
+function qtext(q){return q.blank?q.a+" × □ = "+(q.a*q.b):q.a+" × "+q.b+" = ?"}
+function renderPick(){
+  norm();
+  $("stages").querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",+b.dataset.s===S.stage);b.disabled=!!run});
+  var h="";for(var d=2;d<=9;d++)h+='<button type="button" data-d="'+d+'" aria-pressed="'+(S.dan.indexOf(d)>=0)+'"'+(run?" disabled":"")+'>'+d+'단</button>';
+  $("dans").innerHTML=h;$("stage-help").textContent=HELP[S.stage];
+  if(!run){$("b-set").textContent=label(S.stage,S.dan);$("b-n").textContent="0/"+(S.stage===1||((S.stage===2||S.stage===4)&&S.dan.length===1)?9:10);$("b-time").textContent="0.0초";$("b-bar").style.width="0";}
+  var b=best(key());
+  $("best-title").textContent="내 최고 기록 · "+label(S.stage,S.dan);
+  $("best").textContent=b?b.ok+"/"+b.n+" 맞힘, "+sec1(b.ms)+" ("+md(b.t)+")":"이 단·단계는 아직 기록이 없어요.";
+  save(K,S);
+}
+function renderLog(){
+  var l=S.log.slice().reverse().slice(0,30);
+  $("log").innerHTML=l.map(function(x){var idx=S.log.indexOf(x);return '<li><span class="dt">'+md(x.t)+'</span><span class="tx">'+label(x.stage,x.dan)+'<small>'+x.n+'문제 중 '+x.ok+'개 맞힘</small></span><span class="tm">'+sec1(x.ms)+'</span><button type="button" data-i="'+idx+'" aria-label="기록 지우기">×</button></li>'}).join("");
+  $("log-empty").hidden=S.log.length>0;$("log-title").textContent="달리기 기록 ("+S.log.length+"번)";
+}
+function setBtns(){var on=!!run;$("start").disabled=on;$("stop").disabled=!on;
+  $("pad").querySelectorAll("button").forEach(function(b){b.disabled=!on});$("retry").disabled=on;renderPick()}
+function show(){var q=run.qs[run.i];$("q").textContent=qtext(q);input="";$("ans").textContent="";
+  $("b-n").textContent=run.i+"/"+run.qs.length;$("b-bar").style.width=(run.i/run.qs.length*100)+"%"}
+function draw(){if(run)$("b-time").textContent=sec1(Date.now()-run.start)}
+function begin(qs,practice){
+  run={qs:qs,i:0,start:Date.now(),wrong:[],practice:practice,stage:S.stage,dan:S.dan.slice()};
+  $("wrong-box").hidden=true;$("b-set").textContent=practice?"틀린 문제 다시 풀기":label(S.stage,S.dan);
+  $("msg").textContent=practice?"연습이에요. 천천히 풀어도 괜찮아요.":"출발! 답을 누르고 확인을 누르세요.";
+  clearInterval(tick);tick=setInterval(draw,100);show();draw();setBtns();
+}
+function answer(){
+  if(!run||input==="")return;
+  var q=run.qs[run.i],right=q.blank?q.b:q.a*q.b,v=parseInt(input,10);
+  if(v===right)$("msg").textContent="맞았어요.";
+  else{run.wrong.push(q);$("msg").textContent="아쉬워요. "+(q.blank?q.a+" × "+q.b+" = "+q.a*q.b:q.a+" × "+q.b+" = "+right)+"이에요."}
+  run.i++;
+  if(run.i>=run.qs.length)finish();else show();
+}
+function finish(){
+  var ms=Date.now()-run.start,n=run.qs.length,ok=n-run.wrong.length,m;
+  clearInterval(tick);$("b-time").textContent=sec1(ms);$("b-n").textContent=n+"/"+n;$("b-bar").style.width="100%";
+  lastWrong=run.wrong.slice();
+  if(run.practice){m="다시 풀기 끝! "+n+"문제 중 "+ok+"개 맞혔어요.";}
+  else{
+    var k=run.stage+":"+run.dan.join(","),b=best(k);
+    S.log.push({stage:run.stage,dan:run.dan,key:k,n:n,ok:ok,ms:ms,t:Date.now()});if(S.log.length>300)S.log.shift();save(K,S);
+    m=n+"문제 중 "+ok+"개 맞혔어요. 걸린 시간 "+sec1(ms)+". ";
+    if(!b)m+="이 단·단계 첫 기록이에요.";
+    else if(ok>b.ok)m+="지난 최고보다 "+(ok-b.ok)+"개 더 맞혔어요.";
+    else if(ok===b.ok&&ms<b.ms)m+="새 기록! 지난 최고보다 "+((b.ms-ms)/1000).toFixed(1)+"초 빨라요.";
+    else m+="최고 기록은 "+b.ok+"개, "+sec1(b.ms)+"예요.";
+  }
+  $("q").textContent=ok===n?"다 맞혔어요":"끝";$("ans").textContent="";$("msg").textContent=m;
+  run=null;setBtns();renderLog();
+  if(lastWrong.length){$("wrong").innerHTML=lastWrong.map(function(q){return '<span>'+q.a+" × "+q.b+" = "+q.a*q.b+'</span>'}).join("");$("wrong-box").hidden=false}
+}
+$("start").onclick=function(){if(run)return;norm();begin(make(),false)};
+$("stop").onclick=function(){clearInterval(tick);run=null;setBtns();$("q").textContent="준비";$("ans").textContent="";$("msg").textContent="이번 판은 기록하지 않았어요."};
+$("retry").onclick=function(){if(run||!lastWrong.length)return;begin(shuffle(lastWrong.slice()),true)};
+$("pad").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||!run)return;var k=b.dataset.k;
+  if(k==="ok")answer();else if(k==="del")input=input.slice(0,-1);else if(input.length<2)input+=k;
+  if(run)$("ans").textContent=input});
+document.addEventListener("keydown",function(e){if(!run)return;if(e.target.tagName==="INPUT")return;
+  if(/^[0-9]$/.test(e.key)){if(input.length<2)input+=e.key;$("ans").textContent=input;e.preventDefault()}
+  else if(e.key==="Backspace"){input=input.slice(0,-1);$("ans").textContent=input;e.preventDefault()}
+  else if(e.key==="Enter"){answer();e.preventDefault()}});
+$("stages").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||run)return;S.stage=+b.dataset.s;renderPick()});
+$("dans").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||run)return;var d=+b.dataset.d;
+  if(!multi())S.dan=[d];
+  else{var i=S.dan.indexOf(d);if(i>=0){if(S.dan.length>(S.stage===3?2:1))S.dan.splice(i,1);else $("msg").textContent=S.stage===3?"3단계는 두 단 이상 골라야 해요.":"한 단 이상 골라야 해요."}else S.dan.push(d)}
+  renderPick()});
+$("log").addEventListener("click",function(e){var b=e.target.closest("button[data-i]");if(!b)return;S.log.splice(+b.dataset.i,1);save(K,S);renderLog();renderPick()});
+renderPick();renderLog();setBtns();
+})();
+</script>
+<script>
+document.addEventListener("click",function(e){var b=e.target.closest("[data-copy]");if(!b)return;var t=document.getElementById(b.dataset.copy).innerText;
+function ok(){var o=b.textContent;b.textContent="복사했어요";setTimeout(function(){b.textContent=o},1500)}
+function fb(){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(_){}a.remove()}
+if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(ok,fb);else fb()});
+</script>
+</body>
+</html>
