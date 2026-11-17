@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="ko" data-account="chart">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>연패 버티기 시뮬레이터</title>
+<meta name="description" content="승률·손익비·1회 위험으로 연패 확률과 가상 낙폭 분포를 보는 웹앱">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+.app-grid{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+.app-grid > *{min-width:0}
+@media (min-width:900px){
+  :root{--wrap:960px}
+  .app-grid{grid-template-columns:5fr 6fr;gap:var(--s-5);align-items:start}
+}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head--flush{margin-bottom:0}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.result{display:flex;flex-direction:column;gap:var(--s-4)}
+.actions{display:flex;gap:var(--s-2);margin-top:var(--s-4)}
+.actions .btn{flex:1}
+.row-btn{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center}
+.btn--sm{min-height:40px;padding:0 var(--s-3);font-size:var(--t-15)}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@chart_nana_</b><span>차트 · 리스크 관리</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">연패 버티기 시뮬레이터</h1>
+    <p class="cover-desc">내 승률로 연속 손실이 얼마나 길게 올 수 있는지 봅니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.17</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="app-grid">
+    <section class="panel" aria-labelledby="in-title">
+      <div class="panel-head">
+        <h2 id="in-title">내 숫자 넣기</h2>
+        <span class="badge">예시 값</span>
+      </div>
+      <form id="calc" class="fields" novalidate>
+        <div class="field">
+          <label for="f-win">승률</label>
+          <div class="field-box"><input id="f-win" inputmode="decimal" value="45"><span class="field-unit">%</span></div>
+        </div>
+        <div class="field">
+          <label for="f-rr">손익비</label>
+          <div class="field-box"><input id="f-rr" inputmode="decimal" value="1.5"><span class="field-unit">배</span></div>
+          <p class="field-help">평균 이익 ÷ 평균 손실</p>
+        </div>
+        <div class="field">
+          <label for="f-risk">1회 위험</label>
+          <div class="field-box"><input id="f-risk" inputmode="decimal" value="1"><span class="field-unit">% 계좌</span></div>
+          <p class="field-help">한 번 질 때 잃는 계좌 비율</p>
+        </div>
+        <div class="field">
+          <label for="f-n">거래 횟수</label>
+          <div class="field-box"><input id="f-n" inputmode="numeric" value="100"><span class="field-unit">회</span></div>
+          <p class="field-help">10~300회</p>
+        </div>
+        <div class="field">
+          <label for="f-k">버틸 수 있는 연패</label>
+          <div class="field-box"><input id="f-k" inputmode="numeric" value="8"><span class="field-unit">연패</span></div>
+          <p class="field-help">이만큼 연속으로 지면 멈추고 싶어지는 길이</p>
+        </div>
+      </form>
+      <div class="actions">
+        <button class="btn btn--accent" type="submit" form="calc">계산하기</button>
+        <button class="btn btn--ghost" type="button" id="reset">예시 값으로</button>
+      </div>
+    </section>
+
+    <section class="panel result" aria-labelledby="out-title" aria-live="polite">
+      <div class="panel-head panel-head--flush">
+        <h2 id="out-title">결과</h2>
+        <span class="badge" id="out-state">계산됨</span>
+      </div>
+      <div class="key">
+        <span class="key-label" id="k-label">100회 안에 8연패 이상이 한 번이라도 나올 확률</span>
+        <output class="key-value" id="o-pk">—</output>
+      </div>
+      <dl class="stats stats--2">
+        <div class="stat"><dt>가장 긴 연패 (중간값)</dt><dd id="o-med">—</dd><span class="stat-note">절반은 이보다 길게 나옴</span></div>
+        <div class="stat"><dt>열 번 중 한 번은</dt><dd id="o-p90">—</dd><span class="stat-note">이 이상 연패 (90번째 백분위)</span></div>
+        <div class="stat"><dt>최대 낙폭 (중간값)</dt><dd id="o-mdd">—</dd><span class="stat-note" id="o-mdd90"></span></div>
+        <div class="stat"><dt>끝난 뒤 계좌 (중간값)</dt><dd id="o-end">—</dd><span class="stat-note" id="o-endn"></span></div>
+      </dl>
+      <p class="small" id="o-msg"></p>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="chart-title">
+    <div>
+      <p class="eyebrow">거래 횟수 안에서</p>
+      <h2 class="sec-title" id="chart-title">가장 긴 연패의 분포</h2>
+    </div>
+    <figure class="chart" id="chart">
+      <figcaption class="chart-title" id="chart-cap">100회 거래에서 가장 긴 연패가 몇 번일 확률</figcaption>
+      <div class="legend"><span><i></i>버틸 수 있는 연패 이상</span><span><i class="l-mute"></i>그보다 짧음</span></div>
+      <div id="svg-box"></div>
+      <p class="chart-note">가로: 가장 긴 연패 길이 · 세로: 확률(%). 정확한 계산값이며, 막대를 누르면 숫자가 보입니다.</p>
+      <div class="tip" id="tip" hidden></div>
+    </figure>
+  </section>
+
+  <section class="sec" aria-labelledby="t-title">
+    <div>
+      <p class="eyebrow">연패 길이별</p>
+      <h2 class="sec-title" id="t-title">나올 확률과 그때 줄어든 계좌</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>연패</th><th class="num">한 번 이상</th><th class="num">계좌 감소</th><th class="num">회복 필요</th></tr></thead>
+        <tbody id="tbl"></tbody>
+      </table>
+    </div>
+    <p class="small">한 번 이상 = 정해진 거래 횟수 안에서 그 길이 이상의 연패가 적어도 한 번 나올 확률. 계좌 감소 = 그 연패 동안 1회 위험 비율로 계속 졌을 때 줄어드는 비율. 회복 필요 = 줄어든 계좌를 되돌리는 데 필요한 수익률.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="mc-title">
+    <div>
+      <p class="eyebrow">가상 시뮬레이션</p>
+      <h2 class="sec-title" id="mc-title">낙폭과 계좌는 이렇게 계산했습니다</h2>
+    </div>
+    <div class="row-btn"><span class="badge">가상 데이터</span><button class="btn btn--ghost btn--sm" type="button" id="rerun">다시 돌리기</button><span class="small" id="mc-n"></span></div>
+    <ul class="bullets">
+      <li>최대 낙폭과 끝난 뒤 계좌는 같은 조건으로 2,000번 가상 거래를 돌려 낸 값입니다. 다시 돌리면 조금씩 달라집니다.</li>
+      <li>이길 때는 1회 위험 × 손익비만큼 늘고, 질 때는 1회 위험만큼 줄며, 매번 그때 계좌의 같은 비율을 겁니다.</li>
+      <li>실제 매매는 승률과 손익비가 매번 다르고, 갭·수수료·실수가 더해집니다. 실제보다 부드러운 그림이라고 보세요.</li>
+    </ul>
+    <div class="callout">
+      <span class="callout-label">읽는 법</span>
+      <p>승률 50%라도 100번 거래하면 5~6연패는 흔하게 나옵니다. 연패가 왔다고 해서 방법이 틀렸다는 뜻은 아닐 수 있고, 반대로 연패가 없다고 해서 방법이 맞았다는 뜻도 아닙니다. 연패의 길이보다 그때 계좌가 얼마나 줄어드는지를 먼저 정해 두는 쪽이 이 계산의 쓸모입니다.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@chart_nana_</dd>
+      <dt>기준일</dt><dd>2026.11.17</dd>
+      <dt>출처</dt><dd>직접 만든 계산식 (연패 확률은 동적 계획법으로 정확히 계산, 낙폭·계좌는 2,000회 가상 시뮬레이션). 시장 자료를 쓰지 않습니다.</dd>
+    </dl>
+    <p class="foot-note">투자 조언이 아닙니다. 매 거래의 승패가 서로 독립이라고 가정한 가상 계산이며, 실제 결과를 예측하거나 보장하지 않습니다. 판단과 책임은 본인에게 있습니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var val=function(id){var v=String($(id).value).replace(/[^0-9.]/g,'');return v===''?NaN:parseFloat(v)};
+  var defaults={'f-win':'45','f-rr':'1.5','f-risk':'1','f-n':'100','f-k':'8'};
+  var seed=1, D=null;
+  function pct(x){return x>=0.995&&x<1?'99% 이상':x<0.005&&x>0?'1% 미만':Math.round(x*100)+'%'}
+  /* 길이 k 이상의 연패가 N회 안에 한 번도 없을 확률 */
+  function noRun(N,q,k){
+    var st=new Float64Array(k);st[0]=1;
+    for(var t=0;t<N;t++){var nx=new Float64Array(k),s=0;
+      for(var j=0;j<k;j++){var v=st[j];if(!v)continue;s+=v;if(j+1<k)nx[j+1]+=v*q}
+      nx[0]+=s*(1-q);st=nx}
+    var r=0;for(var i=0;i<k;i++)r+=st[i];return r}
+  function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function quant(arr,p){var a=arr.slice().sort(function(x,y){return x-y});return a[Math.min(a.length-1,Math.floor(p*a.length))]}
+  function calc(){
+    var w=val('f-win'),rr=val('f-rr'),risk=val('f-risk'),N=Math.round(val('f-n')),k=Math.round(val('f-k'));
+    var st=$('out-state');
+    if(!(w>0&&w<100&&rr>0&&risk>0&&risk<100&&N>=10&&N<=300&&k>=1&&k<=N)){
+      st.textContent='입력 확인';st.className='badge badge--warn';
+      $('o-msg').textContent='승률은 0~100 사이, 1회 위험은 0~100% 사이, 거래 횟수는 10~300회, 연패는 1 이상 거래 횟수 이하로 넣어 주세요.';return}
+    st.textContent='계산됨';st.className='badge';
+    var q=1-w/100,r=risk/100;
+    /* 최장 연패 분포: P(max>=j) */
+    var maxK=Math.min(N,60),ge=[1];
+    for(var j=1;j<=maxK;j++){ge[j]=1-noRun(N,q,j);if(ge[j]<1e-6){for(var z=j+1;z<=maxK;z++)ge[z]=0;break}}
+    var dist=[];for(j=0;j<=maxK;j++)dist[j]=(ge[j]||0)-(j<maxK?(ge[j+1]||0):0);
+    function qAt(p){for(var j=0;j<=maxK;j++){if((ge[j+1]||0)<=1-p)return j}return maxK}
+    var pk=k<=maxK?(ge[k]||0):1-noRun(N,q,k);
+    $('k-label').textContent=N+'회 안에 '+k+'연패 이상이 한 번이라도 나올 확률';
+    $('o-pk').textContent=pct(pk);
+    $('o-med').innerHTML=qAt(0.5)+'<small>연패</small>';
+    $('o-p90').innerHTML=qAt(0.9)+'<small>연패</small>';
+    /* 몬테카를로 */
+    var R=rng(seed),M=2000,mdd=[],end=[];
+    for(var s=0;s<M;s++){var eq=1,pk2=1,dd=0;
+      for(var t=0;t<N;t++){eq*=R()<w/100?1+r*rr:1-r;if(eq>pk2)pk2=eq;var d=1-eq/pk2;if(d>dd)dd=d}
+      mdd.push(dd);end.push(eq)}
+    $('o-mdd').innerHTML='−'+(quant(mdd,0.5)*100).toFixed(1)+'<small>%</small>';
+    $('o-mdd90').textContent='열 번 중 한 번은 −'+(quant(mdd,0.9)*100).toFixed(1)+'% 이상';
+    var e50=quant(end,0.5),e10=quant(end,0.1),loseShare=end.filter(function(x){return x<1}).length/M;
+    $('o-end').innerHTML=(e50>=1?'+':'−')+Math.abs((e50-1)*100).toFixed(1)+'<small>%</small>';
+    $('o-endn').textContent='끝에 원금보다 줄어 있는 경우 '+pct(loseShare);
+    $('mc-n').textContent='지금 회차: '+seed+'번째 · 2,000번 반복';
+    var ev=w/100*rr-(1-w/100);
+    $('o-msg').textContent='1회 기대값은 '+(ev>=0?'+':'−')+Math.abs(ev).toFixed(2)+'R 입니다. '+k+'연패를 맞으면 계좌는 '+((1-Math.pow(1-r,k))*100).toFixed(1)+'% 줄어듭니다.'+(ev<=0?' 기대값이 0 이하라 거래를 늘릴수록 계좌가 줄어드는 쪽으로 기웁니다.':'');
+    $('tbl').innerHTML=[3,5,6,8,10,12,15].filter(function(x){return x<=N}).map(function(x){var p=x<=maxK?(ge[x]||0):0,dn=1-Math.pow(1-r,x),cur=x===k;
+      return '<tr'+(cur?' class="is-key"':'')+'><td class="nowrap">'+x+'연패'+(cur?' (기준)':'')+'</td><td class="num">'+pct(p)+'</td><td class="num">−'+(dn*100).toFixed(1)+'%</td><td class="num">+'+((1/(1-dn)-1)*100).toFixed(1)+'%</td></tr>'}).join('');
+    if(k&&[3,5,6,8,10,12,15].indexOf(k)<0&&k<=N){var p=k<=maxK?(ge[k]||0):0,dn=1-Math.pow(1-r,k);$('tbl').innerHTML+='<tr class="is-key"><td class="nowrap">'+k+'연패 (기준)</td><td class="num">'+pct(p)+'</td><td class="num">−'+(dn*100).toFixed(1)+'%</td><td class="num">+'+((1/(1-dn)-1)*100).toFixed(1)+'%</td></tr>'}
+    $('chart-cap').textContent=N+'회 거래에서 가장 긴 연패가 몇 번일 확률';
+    D={dist:dist,k:k};draw();
+  }
+  function draw(){
+    if(!D)return;
+    var last=0;for(var j=D.dist.length-1;j>=0;j--){if(D.dist[j]>=0.002){last=j;break}}
+    var first=0;for(j=0;j<D.dist.length;j++){if(D.dist[j]>=0.002){first=j;break}}
+    var xs=[];for(j=first;j<=last;j++)xs.push(j);
+    var box=$('svg-box'),W=Math.max(280,box.clientWidth),H=220,ml=34,mr=8,mt=20,mb=28,iw=W-ml-mr,ih=H-mt-mb;
+    var ymax=Math.max.apply(null,xs.map(function(x){return D.dist[x]}));ymax=Math.ceil(ymax*10)/10||0.1;
+    var bw=iw/xs.length,y=function(v){return mt+ih-v/ymax*ih};
+    var s='<svg width="'+W+'" height="'+H+'" role="img" aria-label="가장 긴 연패 분포 막대 그래프">';
+    for(var g=0;g<=ymax+1e-9;g+=ymax/2){s+='<line class="c-grid" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+y(g)+'" y2="'+y(g)+'"/><text x="'+(ml-6)+'" y="'+(y(g)+4)+'" text-anchor="end">'+Math.round(g*100)+'%</text>'}
+    var top=xs.reduce(function(a,b){return D.dist[b]>D.dist[a]?b:a},xs[0]);
+    xs.forEach(function(x,i){var v=D.dist[x],x0=ml+i*bw+bw*0.15,w=bw*0.7,h=Math.max(0,y(0)-y(v));
+      s+='<g><rect class="'+(x>=D.k?'c-1':'c-mute')+'" x="'+x0.toFixed(1)+'" y="'+y(v).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="'+Math.min(4,w/2)+'"/>';
+      s+='<rect class="c-hit" data-x="'+x+'" x="'+(ml+i*bw).toFixed(1)+'" y="'+mt+'" width="'+bw.toFixed(1)+'" height="'+ih+'"/></g>';
+      if(bw>=18||i%2===0)s+='<text x="'+(x0+w/2).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+x+'</text>';
+      if(x===top)s+='<text class="c-value" x="'+(x0+w/2).toFixed(1)+'" y="'+(y(v)-6).toFixed(1)+'" text-anchor="middle">'+Math.round(v*100)+'%</text>'});
+    s+='<line class="c-axis" x1="'+ml+'" x2="'+(W-mr)+'" y1="'+y(0)+'" y2="'+y(0)+'"/></svg>';
+    box.innerHTML=s;
+  }
+  var tip=$('tip');
+  $('svg-box').addEventListener('click',function(e){var c=e.target.closest('.c-hit');if(!c||!D){tip.hidden=true;return}
+    var x=+c.dataset.x;tip.innerHTML='<b>가장 긴 연패 '+x+'번</b>확률 '+(D.dist[x]*100).toFixed(1)+'%';
+    var fr=$('chart').getBoundingClientRect(),cr=c.getBoundingClientRect();tip.hidden=false;
+    var left=cr.left-fr.left+cr.width/2-tip.offsetWidth/2;left=Math.max(0,Math.min(left,fr.width-tip.offsetWidth));
+    tip.style.left=left+'px';tip.style.top=(cr.top-fr.top+10)+'px'});
+  document.addEventListener('click',function(e){if(!e.target.closest('#svg-box'))tip.hidden=true});
+  $('calc').addEventListener('submit',function(e){e.preventDefault();calc()});
+  var it;$('calc').addEventListener('input',function(){clearTimeout(it);it=setTimeout(calc,200)});
+  $('reset').addEventListener('click',function(){for(var k in defaults)$(k).value=defaults[k];seed=1;calc()});
+  $('rerun').addEventListener('click',function(){seed++;calc()});
+  var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(draw,150)});
+  calc();
+})();
+</script>
+</body>
+</html>
