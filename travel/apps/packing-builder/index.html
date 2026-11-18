@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="ko" data-account="travel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>짐 싸기 목록 만들기</title>
+<meta name="description" content="기간·날씨·동행·할 일을 고르면 개수까지 적힌 짐 목록이 만들어지고, 체크한 것은 이 기기에 남는 웹앱">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+[hidden]{display:none!important}
+.app-grid{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+.app-grid > *{min-width:0}
+@media (min-width:900px){
+  :root{--wrap:960px}
+  .app-grid{grid-template-columns:5fr 6fr;gap:var(--s-5);align-items:start}
+}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head--flush{margin-bottom:0}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.result{display:flex;flex-direction:column;gap:var(--s-4)}
+.actions{display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-4)}
+.actions .btn{flex:1}
+.pick{display:flex;flex-direction:column;gap:var(--s-2)}
+.pick + .pick{margin-top:var(--s-4)}
+.ticks{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-4)}
+.ticks label{display:inline-flex;gap:var(--s-2);align-items:center;font-size:var(--t-15);cursor:pointer}
+.ticks input{width:20px;height:20px;margin:0;accent-color:var(--ink)}
+.bar{height:8px;border:1px solid var(--ink);border-radius:var(--r-1);overflow:hidden;background:var(--surface)}
+.bar i{display:block;height:100%;width:0;background:var(--ink)}
+.group + .group{margin-top:var(--s-5)}
+.group-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-2)}
+.group-head h3{font-size:var(--t-16);font-weight:700}
+.group-head span{font-size:var(--t-13);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.check .qty{font-weight:700;font-variant-numeric:tabular-nums}
+.check .badge{margin-left:var(--s-1);vertical-align:1px}
+.check input:checked + span{color:var(--ink-3)}
+.check input:checked + span .qty{color:var(--ink-3)}
+.check li.mine{display:flex;align-items:flex-start;gap:var(--s-2)}
+.check li.mine label{flex:1}
+.check li.mine button{flex:none;border:0;background:none;color:var(--ink-3);font:400 var(--t-16)/1 var(--font);cursor:pointer;padding:var(--s-3) var(--s-1)}
+.add{display:flex;gap:var(--s-2);margin-top:var(--s-4)}
+.add .field-box{flex:1;min-width:0}
+.add .btn,.actions .btn{white-space:nowrap;padding:0 var(--s-4)}
+.add .field-box input{text-align:left;font-size:var(--t-16);font-weight:400}
+.rule-table td:first-child{white-space:nowrap;font-weight:700}
+@media print{
+  :root{--bg:#fff}
+  .cover,.no-print,.foot-home{display:none!important}
+  .app-grid{display:block}
+  .panel{border:0;padding:0}
+  .check label{padding:4px 0}
+  .main{padding-top:0;gap:var(--s-5)}
+}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@travel_junn_</b><span>해외여행 준비</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">짐 싸기 목록 만들기</h1>
+    <p class="cover-desc">여행 조건을 고르면 챙길 것과 개수를 목록으로 만듭니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.18</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="app-grid">
+
+    <section class="panel no-print" aria-labelledby="in-title">
+      <div class="panel-head">
+        <h2 id="in-title">여행 조건 고르기</h2>
+        <span class="badge">이 기기에만 저장</span>
+      </div>
+      <div class="fields">
+        <div class="field">
+          <label for="f-nights">몇 박</label>
+          <div class="field-box"><input id="f-nights" inputmode="numeric" value="4"><span class="field-unit">박</span></div>
+          <p class="field-help">1~30박. 옷 개수가 여기서 정해집니다.</p>
+        </div>
+        <div class="field">
+          <label for="f-laundry">현지에서 빨래</label>
+          <div class="field-box"><select id="f-laundry"><option value="0">못 한다</option><option value="1">중간에 한 번 이상 한다</option></select></div>
+          <p class="field-help">빨래를 하면 옷은 4일 치까지만 넣습니다.</p>
+        </div>
+      </div>
+      <div class="pick" style="margin-top:var(--s-4)">
+        <span class="field-label" id="l-wx">현지 날씨</span>
+        <div class="seg" id="wx" role="group" aria-labelledby="l-wx">
+          <button type="button" data-v="hot" aria-pressed="true">더움 (25도 이상)</button>
+          <button type="button" data-v="mild" aria-pressed="false">선선 (10~25도)</button>
+          <button type="button" data-v="cold" aria-pressed="false">추움 (10도 아래)</button>
+        </div>
+        <div class="ticks"><label><input type="checkbox" id="f-rain">비 오는 날이 잦다 (우기·장마)</label></div>
+      </div>
+      <div class="pick">
+        <span class="field-label">누구와 가나요 (여럿 고르기)</span>
+        <div class="ticks" id="who">
+          <label><input type="checkbox" value="baby">영유아 (기저귀 쓰는 나이)</label>
+          <label><input type="checkbox" value="kid" checked>어린이</label>
+          <label><input type="checkbox" value="senior">부모님 (어르신)</label>
+        </div>
+      </div>
+      <div class="pick">
+        <span class="field-label">무엇을 하나요 (여럿 고르기)</span>
+        <div class="ticks" id="act">
+          <label><input type="checkbox" value="swim" checked>물놀이·바다</label>
+          <label><input type="checkbox" value="walk" checked>도시 걷기</label>
+          <label><input type="checkbox" value="hike">등산·트레킹</label>
+          <label><input type="checkbox" value="ski">스키·눈놀이</label>
+          <label><input type="checkbox" value="dress">격식 있는 저녁</label>
+          <label><input type="checkbox" value="work">업무·출장</label>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn--accent" type="button" id="make">목록 만들기</button>
+        <button class="btn btn--ghost" type="button" id="reset">예시 조건으로</button>
+      </div>
+      <p class="small" style="margin-top:var(--s-3)">조건을 바꿔도 이미 체크한 항목은 그대로 남습니다.</p>
+    </section>
+
+    <section class="panel result" aria-labelledby="out-title">
+      <div class="panel-head panel-head--flush">
+        <h2 id="out-title">우리 짐 목록</h2>
+        <span class="badge" id="out-sum">4박 5일</span>
+      </div>
+      <div class="key">
+        <span class="key-label">챙긴 것</span>
+        <output class="key-value" id="o-done">0<small>/ 0개</small></output>
+      </div>
+      <div class="bar" aria-hidden="true"><i id="o-bar"></i></div>
+      <p class="small" id="o-msg">개수는 사람 한 명 기준입니다. <span class="badge">기내</span> 표시는 부치는 가방에 넣지 말고 들고 탈 것.</p>
+      <div id="list"></div>
+      <div class="add no-print">
+        <div class="field-box"><input id="f-add" maxlength="40" placeholder="우리 집만의 항목 더하기" aria-label="더할 항목"></div>
+        <button class="btn btn--ghost" type="button" id="add">더하기</button>
+      </div>
+      <div class="actions no-print">
+        <button class="btn btn--ghost" type="button" id="clear">체크 모두 지우기</button>
+        <button class="btn btn--ghost" type="button" id="print">인쇄하기</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="sec no-print" aria-labelledby="rule-title">
+    <div>
+      <p class="eyebrow">계산 규칙</p>
+      <h2 class="sec-title" id="rule-title">옷 개수는 이렇게 정했습니다</h2>
+    </div>
+    <div class="table-wrap"><table class="rule-table">
+      <thead><tr><th>항목</th><th>개수 (1명)</th></tr></thead>
+      <tbody>
+        <tr><td>입을 날</td><td>박 수 + 1일. 빨래를 하면 최대 4일 치</td></tr>
+        <tr><td>상의</td><td>입을 날만큼</td></tr>
+        <tr><td>속옷·양말</td><td>입을 날 + 1 (여분 하나)</td></tr>
+        <tr><td>하의</td><td>입을 날 ÷ 3, 올림. 최소 1</td></tr>
+        <tr><td>잠옷</td><td>1벌, 6박 넘고 빨래를 못 하면 2벌</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small">예) 4박, 빨래 못 함 → 입을 날 5일 → 상의 5, 속옷·양말 6, 하의 2. 7박, 빨래 함 → 입을 날 4일 → 상의 4, 속옷·양말 5, 하의 2.</p>
+    <div class="callout">
+      <span class="callout-label">배터리·액체류</span>
+      <p>보조배터리는 부치는 가방에 넣을 수 없고 용량·개수 제한이 있습니다. 기내에 들고 타는 액체류는 용기 하나 100ml 이하가 기본입니다. 규정은 항공사와 나라마다 다르고 바뀔 수 있으니 출발 전 공식 안내를 확인하세요. 무게와 배터리는 <a class="link" href="../baggage-check/">수하물·배터리 점검표</a>에서 따로 계산할 수 있습니다.</p>
+    </div>
+    <div class="callout">
+      <span class="callout-label">함께 보기</span>
+      <p>출발 사흘 전부터 할 일은 <a class="link" href="../../guides/before-72h/">출국 전 72시간 순서</a>, 집에서 나설 시각은 <a class="link" href="../airport-backward/">공항 도착 시각 역산기</a>에 있습니다.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@travel_junn_</dd>
+      <dt>기준일</dt><dd>2026.11.18</dd>
+      <dt>출처</dt><dd>목록과 옷 개수 규칙은 직접 만든 것. 기내 액체류 100ml·유아식 예외는 아시아나항공 운송제한 물품 안내(2026.11.18 확인).</dd>
+    </dl>
+    <p class="foot-note">수하물·배터리·액체류 규정은 항공사와 나라마다 다르고 바뀔 수 있습니다. 출발 전 공식 안내를 확인하세요. 입력과 체크는 이 기기 브라우저에만 저장됩니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var K='travel-packing-builder';
+function load(){try{var v=localStorage.getItem(K);return v?JSON.parse(v):null}catch(_){return null}}
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}}
+var DEF={nights:4,laundry:0,wx:'hot',rain:false,who:['kid'],act:['swim','walk'],done:{},mine:[]};
+var S=load();if(!S||typeof S!=='object')S=JSON.parse(JSON.stringify(DEF));
+['who','act','mine'].forEach(function(k){if(!Array.isArray(S[k]))S[k]=[]});if(!S.done||typeof S.done!=='object')S.done={};
+
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function has(a,v){return a.indexOf(v)>=0}
+
+/* 개수 계산: 표의 규칙과 같다 */
+function counts(n,laundry){
+  var days=n+1, wear=laundry?Math.min(days,4):days;
+  return {days:days,wear:wear,top:wear,under:wear+1,bottom:Math.max(1,Math.ceil(wear/3)),pj:(n>6&&!laundry)?2:1};
+}
+
+/* 항목: [id, 이름, 개수 문자열 또는 '', 기내 여부, 메모] */
+function build(){
+  var c=counts(S.nights,S.laundry), w=S.wx, G=[];
+  var docs=[['passport','여권','',1,'남은 유효기간 확인, 사진면 사본은 휴대폰에 따로'],
+    ['ticket','항공권·숙소 예약 확인','',1,'화면 캡처해 두면 인터넷 없이도 열림'],
+    ['entry','입국 서류·전자 신고','',1,'나라마다 다름, 입국 신고 한 장 정리 참고'],
+    ['card','해외 결제 카드 2장','',1,'카드사 다른 것 두 장, 한 장은 다른 가방에'],
+    ['cash','현지 현금','',1,'첫날 교통비만큼은 현금으로'],
+    ['ins','여행자 보험 증서·긴급 연락처','',1,'']];
+  G.push(['서류·돈',docs]);
+  var cl=[['top','상의',c.top+'벌',0,''],['bottom','하의',c.bottom+'벌',0,''],['under','속옷',c.under+'벌',0,''],['socks','양말',c.under+'켤레',0,''],['pj','잠옷',c.pj+'벌',0,'']];
+  if(w==='hot'){cl.push(['hat','모자','1개',0,'']);cl.push(['thin','얇은 겉옷','1벌',1,'비행기·실내 냉방용']);}
+  if(w==='mild'){cl.push(['jacket','가벼운 겉옷','1벌',1,'아침저녁 기온 차']);cl.push(['knit','긴팔 한 겹 더','1벌',0,'']);}
+  if(w==='cold'){cl.push(['coat','두꺼운 외투','1벌',1,'입고 타면 짐이 줄어듦']);cl.push(['heat','내복·발열 속옷','2벌',0,'']);cl.push(['glove','장갑·목도리·털모자','1벌씩',0,'']);}
+  if(S.rain){cl.push(['umb','접이식 우산 또는 우비','1개',0,'']);cl.push(['shoe2','젖어도 되는 신발','1켤레',0,'']);}
+  cl.push(['shoes','편한 신발','1켤레',0,'새 신발은 피하기']);
+  G.push(['옷',cl]);
+  var wash=[['tooth','칫솔·치약','1세트',0,'치약은 기내면 100ml 이하'],['skin','기초 화장품·로션','',0,'기내로 들고 탈 액체는 용기당 100ml 이하'],
+    ['shave','면도기·위생용품','',0,''],['towel','작은 수건','1장',0,'숙소에 있어도 이동 중에 쓸모']];
+  if(w==='hot'||has(S.act,'swim')||has(S.act,'ski'))wash.push(['sun','자외선 차단제','1개',0,'']);
+  if(w==='hot')wash.push(['bug','모기 기피제','1개',0,'']);
+  if(w==='cold')wash.push(['lip','립밤·보습제','1개',0,'']);
+  G.push(['세면·위생',wash]);
+  var el=[['phone','휴대폰 충전기·케이블','',0,''],['adapter','멀티 어댑터','1개',0,'나라별 전압·플러그에서 모양 확인'],
+    ['battery','보조배터리','',1,'부치는 가방 불가, 용량·개수 제한 확인'],['esim','eSIM·유심·포켓와이파이','',1,'로밍·eSIM 고르기 참고']];
+  if(has(S.act,'work'))el.push(['laptop','노트북·충전기','',1,'']);
+  G.push(['전자기기',el]);
+  var med=[['rx','평소 먹는 약','넉넉히',1,'영문 약 이름 메모, 처방약은 처방전 사본'],['kit','상비약 (해열·소화·밴드)','',1,'기내 가방에 조금 나눠 담기'],
+    ['mask','마스크','2~3개',1,''],['wipe','물티슈·손 소독제','',1,'소독제는 기내 100ml 이하']];
+  G.push(['약·건강',med]);
+  var cab=[['pen','볼펜','1자루',1,'입국 서류 쓸 때'],['pillow','목베개·안대','',1,''],['bag','접는 장바구니·지퍼백','2~3개',0,'젖은 옷·기념품 분리']];
+  if(c.days>=5)cab.push(['clip','빨래 망·작은 세제','',0,'']);
+  G.push(['기내·기타',cab]);
+  if(has(S.who,'baby'))G.push(['영유아',[['diaper','기저귀','하루 개수 × 날수 + 여분',1,'첫날분은 기내 가방에'],['formula','분유·이유식·젖병','',1,'우유·이유식은 비행에 쓸 만큼 100ml 제한 예외, 보안 검색 때 신고'],
+    ['carrier','유모차·아기띠','',0,'유모차는 탑승구까지 쓸 수 있는지 항공사 확인'],['bclothes','아기 여벌 옷','입을 날 × 2',1,'기내 가방에 한 벌'],['bwipe','아기 물티슈·비닐봉지','',1,'']]]);
+  if(has(S.who,'kid'))G.push(['어린이',[['kplay','기내에서 할 것 (책·색칠·이어폰)','',1,'소리 나는 장난감은 피하기'],['ksnack','간식·물병','',1,'물병은 보안 검색 뒤에 채우기'],
+    ['kcard','보호자 연락처 쪽지','1장',0,'아이 주머니에, 이름 대신 보호자 번호만'],['kclothes','아이 여벌 옷','1벌',1,'']]]);
+  if(has(S.who,'senior'))G.push(['부모님',[['srx','드시는 약 + 하루 이틀 여유분','',1,'약 봉투째, 복용 시간 메모'],['sglass','돋보기·안경','',1,''],
+    ['sshoe','발 편한 신발·실내화','',0,''],['sseat','휠체어·우선 수속 요청 여부','',0,'필요하면 항공사에 미리 신청']]]);
+  var A=[];
+  if(has(S.act,'swim'))A.push(['swim','수영복','1~2벌',0,''],['swimbag','방수 팩·젖은 옷 봉투','',0,''],['flip','슬리퍼·아쿠아슈즈','1켤레',0,'']);
+  if(has(S.act,'walk'))A.push(['daybag','가벼운 보조 가방','1개',0,'지퍼 있는 것']);
+  if(has(S.act,'hike'))A.push(['hshoe','등산화','1켤레',0,''],['wind','바람막이','1벌',0,''],['bottle','물통','1개',0,'']);
+  if(has(S.act,'ski'))A.push(['skiw','방수 장갑·고글','',0,''],['skil','기능성 내의','2벌',0,'']);
+  if(has(S.act,'dress'))A.push(['dressc','갖춘 옷 한 벌·구두','',0,'']);
+  if(has(S.act,'work'))A.push(['wdoc','명함·업무 서류','',1,'']);
+  if(A.length)G.push(['할 일별',A]);
+  if(S.mine.length)G.push(['우리 집 항목',S.mine.map(function(m){return ['m_'+m.id,m.t,'',0,'',m.id]})]);
+  return {G:G,c:c};
+}
+
+function render(){
+  var r=build(),total=0,done=0,h='';
+  r.G.forEach(function(g){
+    var gd=0;g[1].forEach(function(it){total++;if(S.done[it[0]]){done++;gd++}});
+    h+='<div class="group"><div class="group-head"><h3>'+g[0]+'</h3><span>'+gd+'/'+g[1].length+'</span></div><ul class="check">';
+    g[1].forEach(function(it){
+      var id='i-'+it[0],ck=S.done[it[0]]?' checked':'';
+      var body='<input type="checkbox" id="'+id+'" data-k="'+esc(it[0])+'"'+ck+'><span>'+esc(it[1])+(it[2]?' <span class="qty">'+esc(it[2])+'</span>':'')+(it[3]?'<span class="badge">기내</span>':'')+(it[4]?'<small>'+esc(it[4])+'</small>':'')+'</span>';
+      if(it[5]!==undefined)h+='<li class="mine"><label for="'+id+'">'+body+'</label><button type="button" data-del="'+it[5]+'" aria-label="항목 지우기">×</button></li>';
+      else h+='<li><label for="'+id+'">'+body+'</label></li>';
+    });
+    h+='</ul></div>';
+  });
+  $('list').innerHTML=h;
+  $('o-done').innerHTML=done+'<small>/ '+total+'개</small>';
+  $('o-bar').style.width=(total?done/total*100:0)+'%';
+  $('out-sum').textContent=S.nights+'박 '+r.c.days+'일';
+  save();
+}
+function syncForm(){
+  $('f-nights').value=S.nights;$('f-laundry').value=String(S.laundry);$('f-rain').checked=!!S.rain;
+  $('wx').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.v===S.wx)});
+  $('who').querySelectorAll('input').forEach(function(i){i.checked=has(S.who,i.value)});
+  $('act').querySelectorAll('input').forEach(function(i){i.checked=has(S.act,i.value)});
+}
+function readForm(){
+  var n=parseInt(String($('f-nights').value).replace(/[^0-9]/g,''),10);
+  if(!(n>=1))n=1;if(n>30)n=30;S.nights=n;$('f-nights').value=n;
+  S.laundry=+$('f-laundry').value;S.rain=$('f-rain').checked;
+  S.who=[].slice.call($('who').querySelectorAll('input:checked')).map(function(i){return i.value});
+  S.act=[].slice.call($('act').querySelectorAll('input:checked')).map(function(i){return i.value});
+  render();
+}
+$('wx').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;S.wx=b.dataset.v;syncForm();render()});
+['f-laundry','f-rain'].forEach(function(id){$(id).addEventListener('change',readForm)});
+$('who').addEventListener('change',readForm);$('act').addEventListener('change',readForm);
+$('f-nights').addEventListener('change',readForm);
+$('make').addEventListener('click',function(){readForm();$('out-title').scrollIntoView({behavior:'smooth',block:'start'})});
+$('reset').addEventListener('click',function(){var d=S.done,m=S.mine;S=JSON.parse(JSON.stringify(DEF));S.done=d;S.mine=m;syncForm();render()});
+$('list').addEventListener('change',function(e){var k=e.target.dataset&&e.target.dataset.k;if(!k)return;if(e.target.checked)S.done[k]=1;else delete S.done[k];render()});
+$('list').addEventListener('click',function(e){var b=e.target.closest('button[data-del]');if(!b)return;var id=+b.dataset.del;
+  S.mine=S.mine.filter(function(m){return m.id!==id});delete S.done['m_'+id];render()});
+function addMine(){var t=$('f-add').value.trim();if(!t)return;S.mine.push({id:Date.now(),t:t.slice(0,40)});$('f-add').value='';render()}
+$('add').addEventListener('click',addMine);
+$('f-add').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();addMine()}});
+$('clear').addEventListener('click',function(){S.done={};render()});
+$('print').addEventListener('click',function(){window.print()});
+syncForm();render();
+})();
+</script>
+</body>
+</html>
