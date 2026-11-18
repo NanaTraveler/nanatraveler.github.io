@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="ko" data-account="chart">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>배당 날짜 구조 한눈표 · 기준일·배당락일·마지막 매수일 계산</title>
+<meta name="description" content="배당기준일을 넣으면 한국(T+2)·미국(T+1) 결제 규칙과 휴장일로 마지막 매수일·배당락일을 계산하고 날짜 순서를 그림으로 보여 주는 대시보드. 종목 정보 없음, 투자 조언이 아닙니다.">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+[hidden]{display:none!important}
+.dash-grid{display:flex;flex-direction:column;gap:var(--s-7)}
+@media (min-width:900px){
+  :root{--wrap:1040px}
+  .dash-grid{display:grid;grid-template-columns:6fr 5fr;gap:var(--s-6);align-items:start}
+  .dash-grid > *{min-width:0}
+}
+.filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--s-3) var(--s-5)}
+.filters .field{min-width:190px}
+.filters > div:first-child{display:flex;flex-direction:column;gap:6px}
+.main{gap:var(--s-6)}
+.quick{display:flex;flex-wrap:wrap;gap:6px}
+.quick button{min-height:32px;padding:0 var(--s-2);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);font:600 var(--t-13)/1 var(--font);cursor:pointer}
+.field-box input[type="date"]{text-align:left;font-size:var(--t-16)}
+.stat dd.date{font-size:var(--t-22)}
+.steps td:first-child{white-space:nowrap;font-weight:700}
+.chart .c-hol{fill:var(--chart-mute)}
+.chart .c-ring{fill:var(--bg);stroke:var(--ink);stroke-width:2}
+.chart .c-today{font-weight:700;fill:var(--ink)}
+.src li{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@chart_nana_</b><span>차트 · 리스크 관리</span></p>
+      <p class="cover-kind">대시보드</p>
+    </div>
+    <h1 class="cover-title">배당 날짜 구조 한눈표</h1>
+    <p class="cover-desc">기준일을 넣으면 마지막 매수일과 배당락일을 계산합니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.18</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+
+  <div class="filters">
+    <div>
+      <span class="field-label" id="l-mkt">시장</span>
+      <div class="seg" id="mkt" role="group" aria-labelledby="l-mkt">
+        <button type="button" aria-pressed="true" data-v="kr">한국 (T+2)</button>
+        <button type="button" aria-pressed="false" data-v="us">미국 (T+1)</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="f-rec">배당기준일</label>
+      <div class="field-box"><input id="f-rec" type="date" value="2026-12-31" min="2026-01-05" max="2027-12-31"></div>
+    </div>
+    <div class="quick" id="quick" aria-label="예시 날짜"></div>
+  </div>
+
+  <dl class="stats" aria-live="polite">
+    <div class="stat"><dt>마지막 매수일</dt><dd class="date" id="s-buy">-</dd><span class="stat-note">이날 장 마감까지 사야 받음</span></div>
+    <div class="stat"><dt>배당락일</dt><dd class="date" id="s-ex">-</dd><span class="stat-note">이날부터 사면 이번 배당 없음</span></div>
+    <div class="stat"><dt>마지막 매수분 결제</dt><dd class="date" id="s-set">-</dd><span class="stat-note" id="s-set-n">주주명부에 오르는 날</span></div>
+    <div class="stat"><dt>사이에 낀 휴장일</dt><dd id="s-hol">-</dd><span class="stat-note" id="s-hol-n"></span></div>
+  </dl>
+  <p class="small" id="msg"></p>
+
+  <div class="dash-grid">
+    <section class="sec" aria-labelledby="c-title">
+      <figure class="chart" id="chart">
+        <figcaption>
+          <p class="chart-title" id="c-title">날짜 순서</p>
+          <p class="chart-note" id="c-note">칸 하나가 하루 · 회색 칸은 휴장일(주말 포함) · 점을 누르면 설명</p>
+        </figcaption>
+        <div id="chart-svg"></div>
+        <div class="tip" id="tip" hidden></div>
+      </figure>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>날짜</th><th>일어나는 일</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="sec" aria-labelledby="t-title">
+      <div>
+        <p class="eyebrow" id="t-eyebrow">한국 주식</p>
+        <h2 class="sec-title" id="t-title">배당 날짜 다섯 개</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="steps">
+          <thead><tr><th>날짜</th><th>뜻</th></tr></thead>
+          <tbody id="steps"></tbody>
+        </table>
+      </div>
+      <div class="callout" id="kr-note">
+        <span class="callout-label">한국은 두 가지 일정이 섞여 있다</span>
+        <p>예전 방식은 12월 31일 같은 결산일을 기준일로 두고, 배당 금액은 다음 해 3월 주주총회에서 정했습니다. 금융위원회가 2023년 1월 발표한 개선 방식은 배당 금액을 먼저 정한 뒤 그 뒤로 기준일을 잡을 수 있게 했습니다. 정관을 바꾼 회사는 기준일이 다음 해 주주총회 뒤로 옮겨 가기도 합니다. 그래서 날짜는 늘 그 회사의 <b>현금·현물배당 결정 공시</b>에서 확인합니다.</p>
+      </div>
+      <div class="callout" id="us-note" hidden>
+        <span class="callout-label">2024년 5월부터 바뀐 것</span>
+        <p>미국 주식은 2024년 5월 28일 결제 주기가 T+2에서 T+1로 줄었습니다. 그래서 배당락일이 기준일 하루 전에서 <b>기준일 당일</b>로 옮겨졌습니다. 기준일 전 거래일 장 마감까지 사야 합니다. 한국 증권사 앱에서는 한국 시간으로 보통 하루 뒤 새벽이 그 장 마감입니다.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="mis-title">
+    <div>
+      <p class="eyebrow">자주 헷갈리는 것</p>
+      <h2 class="sec-title" id="mis-title">이것만 기억하면 됩니다</h2>
+    </div>
+    <ul class="bullets">
+      <li><b>기준일에 사면 늦습니다.</b> 산 주식이 결제돼야 주주명부에 오르는데, 결제는 한국 2거래일·미국 1거래일 뒤입니다.</li>
+      <li><b>배당락일에 팔아도 이번 배당은 받습니다.</b> 이미 마지막 매수일까지 산 사람이 명부에 오르기 때문입니다.</li>
+      <li><b>휴장일이 끼면 날짜가 당겨집니다.</b> 한국 연말처럼 기준일(12월 31일)이 휴장일이면 결제가 그 전에 끝나야 해서 마지막 매수일이 앞당겨집니다.</li>
+      <li><b>배당금은 기준일에 들어오지 않습니다.</b> 한국은 배당 결의일부터 한 달 안에 주는 것이 원칙(상법 제464조의2)이고 회사가 따로 정할 수도 있습니다. 미국은 회사가 지급일을 공시합니다.</li>
+    </ul>
+    <div class="callout">
+      <span class="callout-label">계산 방법</span>
+      <p>마지막 매수일 = 그날 산 주식의 결제일(한국 2거래일 뒤, 미국 1거래일 뒤)이 기준일과 같거나 앞서는 가장 늦은 거래일. 배당락일 = 그다음 거래일. 휴장일 목록은 아래 출처의 것만 넣었습니다. 예) 한국 기준일 2026년 12월 31일(목, 연말 휴장) → 12월 28일(월)에 사면 30일(수) 결제라 받고, 29일(화)에 사면 결제가 2027년 1월 4일이라 못 받습니다.</p>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="src-title">
+    <div>
+      <p class="eyebrow">어디서 확인했나</p>
+      <h2 class="sec-title" id="src-title">출처</h2>
+    </div>
+    <ul class="bullets src">
+      <li>한국 2026년 증시 휴장일 17일(제헌절 7월 17일·지방선거 6월 3일·연말 12월 31일 포함): ETF쇼핑 거래시간·휴장일 안내, 제헌절 공휴일 기사(위키트리 등), 2025년 연말 휴장·배당락 사례는 아시아경제(2025.12.18). 2027년 한국 휴장일은 아직 발표 전이라 계산하지 않습니다.</li>
+      <li>미국 휴장일 2026·2027: NYSE Group 보도자료(2025.12.23, Business Wire)</li>
+      <li>미국 T+1과 배당락일 = 기준일: Nasdaq Trader 공지 ETA2024-29 (2024.05.17)</li>
+      <li>한국 T+2와 배당락일·마지막 매수일 관계: KB국민은행 KB Think(2025.11.03)</li>
+      <li>배당절차 개선: 금융위원회 보도자료(2023.01.31)</li>
+      <li>배당금 지급 시기: 상법 제464조의2</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@chart_nana_</dd>
+      <dt>기준일</dt><dd>2026.11.18</dd>
+      <dt>출처</dt><dd>NYSE·Nasdaq 공지, 금융위원회, 상법, 증시 휴장일 안내 (본문 "출처" 참고)</dd>
+    </dl>
+    <p class="foot-note">투자 조언이 아닙니다. 날짜 구조를 설명하는 계산기이며 특정 종목·매매를 권하지 않습니다. 실제 기준일·배당락일은 각 회사 공시와 증권사 안내가 우선이고, 임시 휴장이 생기면 날짜가 달라질 수 있습니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+var HOL={
+ kr:['2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-02','2026-05-01','2026-05-05','2026-05-25','2026-06-03','2026-07-17','2026-08-17','2026-09-24','2026-09-25','2026-10-05','2026-10-09','2026-12-25','2026-12-31','2027-01-01'],
+ us:['2026-01-01','2026-01-19','2026-02-16','2026-04-03','2026-05-25','2026-06-19','2026-07-03','2026-09-07','2026-11-26','2026-12-25',
+     '2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31','2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24']
+};
+var RANGE={kr:['2026-01-05','2026-12-31'],us:['2026-01-05','2027-12-31']};
+var LAG={kr:2,us:1};
+var QUICK={kr:[['2026-12-31','12월 결산(연말)'],['2026-09-30','9월 말'],['2026-06-30','6월 말']],us:[['2026-12-31','2026.12.31'],['2026-11-27','추수감사절 다음 날'],['2027-03-31','2027.3.31']]};
+var WD='일월화수목금토';
+var $=function(id){return document.getElementById(id)};
+var mkt='kr';
+function P(s){var a=s.split('-');return new Date(Date.UTC(+a[0],+a[1]-1,+a[2]))}
+function S(d){return d.toISOString().slice(0,10)}
+function add(d,n){return new Date(d.getTime()+n*864e5)}
+function hol(d){return HOL[mkt].indexOf(S(d))>=0}
+function open(d){var w=d.getUTCDay();return w!==0&&w!==6&&!hol(d)}
+function nextOpen(d,n){var x=d;while(n>0){x=add(x,1);if(open(x))n--}return x}
+function prevOpen(d){var x=add(d,-1);while(!open(x))x=add(x,-1);return x}
+function fmt(d,y){return (y?d.getUTCFullYear()+'.':'')+(d.getUTCMonth()+1)+'.'+d.getUTCDate()+' ('+WD[d.getUTCDay()]+')'}
+function calc(rec){
+  var buy=open(rec)?rec:prevOpen(rec);
+  while(nextOpen(buy,LAG[mkt])>rec)buy=prevOpen(buy);
+  var ex=nextOpen(buy,1),set=nextOpen(buy,LAG[mkt]);
+  return {rec:rec,buy:buy,ex:ex,set:set};
+}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+
+function steps(){
+  var kr=mkt==='kr';
+  $('t-eyebrow').textContent=kr?'한국 주식':'미국 주식';
+  $('kr-note').hidden=!kr;$('us-note').hidden=kr;
+  var R=kr?[
+    ['배당 결정 공시','이사회가 배당 여부·금액(또는 계획)과 기준일을 알림. 예전 방식은 금액을 기준일 뒤 주주총회에서 확정'],
+    ['마지막 매수일','기준일 2거래일 전. 이날 장 마감까지 사야 결제가 기준일 안에 끝남'],
+    ['배당락일','마지막 매수일 다음 거래일. 이날부터 산 주식은 이번 배당이 없음'],
+    ['배당기준일','이날 주주명부에 있는 사람이 배당을 받음'],
+    ['지급일','결의일부터 한 달 안이 원칙(상법 제464조의2), 회사가 따로 정할 수 있음']
+  ]:[
+    ['배당 선언','회사가 금액·기준일(Record date)·지급일(Payable date)을 함께 발표'],
+    ['마지막 매수일','기준일 1거래일 전. 이날 미국 장 마감까지 사야 함'],
+    ['배당락일','T+1 이후 기준일과 같은 날(Ex-date). 이날부터 산 주식은 이번 배당이 없음'],
+    ['배당기준일','이날 주주명부에 있는 사람이 배당을 받음'],
+    ['지급일','회사가 선언 때 정한 날. 한국 증권사 계좌에 들어오는 날은 증권사 안내 확인']
+  ];
+  $('steps').innerHTML=R.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>'}).join('');
+  $('quick').innerHTML=QUICK[mkt].map(function(q){return '<button type="button" data-d="'+q[0]+'">'+q[1]+'</button>'}).join('');
+}
+
+function draw(r){
+  var box=$('chart-svg'),from=add(r.buy,-3),to=add(r.rec,3),days=[];
+  for(var d=from;d<=to;d=add(d,1))days.push(d);
+  var W=Math.max(300,box.clientWidth),labelW=84,cw=(W-labelW)/days.length,rowH=30,top=42;
+  var ev=[['마지막 매수',r.buy],['결제 완료',r.set],['배당락',r.ex],['배당기준일',r.rec]];
+  var H=top+ev.length*rowH+8,s='';
+  days.forEach(function(d,i){
+    var x=labelW+i*cw, o=open(d);
+    if(!o)s+='<rect class="c-hol" x="'+(x+1)+'" y="'+(top-4)+'" width="'+(cw-2)+'" height="'+(H-top)+'" opacity=".28" rx="2"/>';
+    s+='<text x="'+(x+cw/2)+'" y="16" text-anchor="middle"'+(o?' class="c-today"':'')+'>'+d.getUTCDate()+'</text>';
+    s+='<text x="'+(x+cw/2)+'" y="32" text-anchor="middle">'+WD[d.getUTCDay()]+'</text>';
+  });
+  s+='<line class="c-axis" x1="'+labelW+'" x2="'+W+'" y1="'+(top-6)+'" y2="'+(top-6)+'"/>';
+  ev.forEach(function(e,j){
+    var y=top+j*rowH+rowH/2, i=Math.round((e[1]-from)/864e5), x=labelW+i*cw+cw/2;
+    s+='<line class="c-grid" x1="'+labelW+'" x2="'+W+'" y1="'+y+'" y2="'+y+'"/>';
+    s+='<text class="c-label" x="0" y="'+(y+4.5)+'">'+e[0]+'</text>';
+    s+='<g data-j="'+j+'"><rect class="c-hit" x="'+(x-cw/2)+'" y="'+(y-rowH/2)+'" width="'+cw+'" height="'+rowH+'"/>'
+      +(j===3?'<circle class="c-ring" cx="'+x+'" cy="'+y+'" r="6"/>':'<circle class="c-1" cx="'+x+'" cy="'+y+'" r="6"/>')+'</g>';
+  });
+  box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="마지막 매수일, 결제일, 배당락일, 배당기준일 날짜 순서">'+s+'</svg>';
+  var tip=$('tip'),D=['이날 장 마감까지 사면 이번 배당 대상','마지막 매수분이 결제돼 주주명부에 오르는 날','이날부터 산 주식은 이번 배당 없음','이날 명부에 있는 주주가 배당을 받음'];
+  box.querySelectorAll('g[data-j]').forEach(function(g){var j=+g.getAttribute('data-j'),e=ev[j];
+    var show=function(){tip.innerHTML='<b>'+e[0]+' '+fmt(e[1],1)+'</b>'+D[j];tip.hidden=false;
+      var gb=g.getBoundingClientRect(),cb=$('chart').getBoundingClientRect();tip.style.top=(gb.bottom-cb.top+2)+'px';tip.style.left=Math.max(0,Math.min(gb.left-cb.left-40,cb.width-tip.offsetWidth))+'px'};
+    g.addEventListener('pointerenter',show);g.addEventListener('click',show);g.addEventListener('pointerleave',function(){tip.hidden=true})});
+  $('c-note').textContent=fmt(from,1)+' ~ '+fmt(to)+' · 칸 하나가 하루 · 회색 칸은 휴장일(주말 포함) · 점을 누르면 설명';
+}
+
+function render(){
+  var v=$('f-rec').value,rg=RANGE[mkt];
+  $('f-rec').min=rg[0];$('f-rec').max=rg[1];
+  if(!v||v<rg[0]||v>rg[1]){
+    $('msg').textContent=(mkt==='kr'?'한국은 휴장일을 확인한 2026년 기준일(1월 5일~12월 31일)만 계산합니다. 2027년 휴장일은 거래소 발표 후 더합니다.':'미국은 2026년 1월 5일~2027년 12월 31일 기준일만 계산합니다.');
+    ['s-buy','s-ex','s-set','s-hol'].forEach(function(id){$(id).textContent='확인 필요'});$('s-hol-n').textContent='';$('rows').innerHTML='';$('chart-svg').innerHTML='';return;
+  }
+  var r=calc(P(v));
+  $('s-buy').textContent=fmt(r.buy);$('s-ex').textContent=fmt(r.ex);$('s-set').textContent=fmt(r.set);
+  var hc=0,hn=[];for(var d=add(r.buy,1);d<=r.rec;d=add(d,1)){if(!open(d)){hc++;if(hol(d))hn.push((d.getUTCMonth()+1)+'.'+d.getUTCDate())}}
+  $('s-hol').innerHTML=hc+'<small>일</small>';$('s-hol-n').textContent=hn.length?'공휴일·휴장 '+hn.join(', ')+' 포함':(hc?'모두 주말':'없음');
+  var m='기준일 '+fmt(r.rec,1)+(open(r.rec)?'':'은 휴장일입니다')+'. ';
+  m+='마지막 매수일은 기준일보다 '+Math.round((r.rec-r.buy)/864e5)+'일(달력 기준) 앞섭니다.';
+  if(mkt==='us')m+=' 한국 시간으로는 마지막 매수일 다음 날 새벽 장 마감까지입니다.';
+  $('msg').textContent=m;
+  var L=[[r.buy,'마지막 매수일 · 이날 장 마감까지 매수'],[r.ex,'배당락일 · 이날부터 산 주식은 이번 배당 없음'],[r.set,'마지막 매수분 결제 완료'],[r.rec,'배당기준일 · 주주명부 확정']];
+  L.sort(function(a,b){return a[0]-b[0]});
+  $('rows').innerHTML=L.map(function(x){return '<tr><td class="nowrap">'+fmt(x[0],1)+'</td><td>'+x[1]+'</td></tr>'}).join('');
+  draw(r);
+}
+$('mkt').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;mkt=b.dataset.v;
+  this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});steps();render()});
+$('quick').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;$('f-rec').value=b.dataset.d;render()});
+$('f-rec').addEventListener('input',render);$('f-rec').addEventListener('change',render);
+var t;window.addEventListener('resize',function(){clearTimeout(t);t=setTimeout(render,120)});
+steps();render();
+})();
+</script>
+</body>
+</html>
