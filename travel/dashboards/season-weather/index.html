@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ko" data-account="travel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>월별 여행지 날씨표</title>
+<meta name="description" content="도쿄·방콕·파리 등 12곳의 달별 평균 기온과 강수량 평년값 비교">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+.dash-grid{display:flex;flex-direction:column;gap:var(--s-7)}
+@media (min-width:900px){
+  :root{--wrap:1040px}
+  .dash-grid{display:grid;grid-template-columns:5fr 6fr;gap:var(--s-6);align-items:start}
+  .dash-grid > *{min-width:0}
+}
+.filters{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:var(--s-3)}
+.main{gap:var(--s-5)}
+.dash-grid{display:flex;flex-direction:column;gap:var(--s-7)}
+@media (min-width:900px){
+  :root{--wrap:1040px}
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-6);align-items:start}
+  .dash-grid > *{min-width:0}
+}
+.filters{display:flex;flex-direction:column;gap:var(--s-2)}
+.main{gap:var(--s-5)}
+.seg--months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.seg--months button{padding:0}
+.block{display:flex;flex-direction:column;gap:var(--s-4);margin-top:var(--s-5)}
+
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@travel_junn_</b><span>해외여행 준비</span></p>
+      <p class="cover-kind">대시보드</p>
+    </div>
+    <h1 class="cover-title">월별 여행지 날씨표</h1>
+    <p class="cover-desc">12곳의 달별 평균 기온과 강수량을 나란히 봅니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.23</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+
+  <div class="filters">
+    <span class="field-label" id="m-label">여행 갈 달</span>
+    <div class="seg seg--months" id="month" role="group" aria-labelledby="m-label"></div>
+    <p class="small">30년 평균(평년값)입니다. 그해 날씨 예보가 아닙니다.</p>
+  </div>
+
+  <dl class="stats">
+    <div class="stat"><dt>가장 따뜻한 곳</dt><dd id="s-hot">-</dd><span class="stat-note" id="s-hot-n"></span></div>
+    <div class="stat"><dt>가장 서늘한 곳</dt><dd id="s-cold">-</dd><span class="stat-note" id="s-cold-n"></span></div>
+    <div class="stat"><dt>비가 가장 적은 곳</dt><dd id="s-dry">-</dd><span class="stat-note" id="s-dry-n"></span></div>
+    <div class="stat"><dt>비가 가장 많은 곳</dt><dd id="s-wet">-</dd><span class="stat-note" id="s-wet-n"></span></div>
+  </dl>
+
+  <div class="dash-grid">
+    <section class="sec" aria-labelledby="c1-title">
+      <figure class="chart" id="chart1">
+        <figcaption>
+          <p class="chart-title" id="c1-title">평균 기온</p>
+          <p class="chart-note" id="c1-note">°C · 하루 평균 기온의 월 평년값 · 높은 순</p>
+        </figcaption>
+        <div id="svg1"></div>
+        <div class="tip" id="tip1" hidden></div>
+      </figure>
+    </section>
+    <section class="sec" aria-labelledby="c2-title">
+      <figure class="chart" id="chart2">
+        <figcaption>
+          <p class="chart-title" id="c2-title">월 강수량</p>
+          <p class="chart-note" id="c2-note">mm · 한 달 동안 내린 비의 평년값 · 적은 순</p>
+        </figcaption>
+        <div id="svg2"></div>
+        <div class="tip" id="tip2" hidden></div>
+      </figure>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="t-title">
+    <div>
+      <p class="eyebrow" id="t-eyebrow">고른 달</p>
+      <h2 class="sec-title" id="t-title">도시별로 보기</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>도시</th><th class="num">기온</th><th class="num">강수</th><th>옷·비</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="small">기온 °C, 강수 mm. '옷·비' 칸은 이 자료가 정한 어림 구분입니다: 평균 10°C 미만 겨울옷, 10~17°C 두꺼운 겉옷, 18~23°C 얇은 겉옷, 24°C 이상 여름옷 · 월 200mm 이상 '비 많음', 50mm 미만 '비 적음'. 하루 안의 기온 차는 넣지 않았습니다.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="city-title">
+    <div>
+      <p class="eyebrow">한 도시의 1년</p>
+      <h2 class="sec-title" id="city-title">도시별 12개월</h2>
+    </div>
+    <div class="seg" id="city" role="group" aria-label="도시 고르기"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>월</th><th class="num">기온</th><th class="num">강수</th><th>옷·비</th></tr></thead>
+        <tbody id="city-rows"></tbody>
+      </table>
+    </div>
+    <p class="small" id="city-src"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="src-title">
+    <div>
+      <p class="eyebrow">어디서 가져왔나</p>
+      <h2 class="sec-title" id="src-title">관측소와 출처</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>도시</th><th>출처 · 관측소</th><th>기간</th></tr></thead>
+        <tbody id="src-rows"></tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="callout-label">읽는 법</span>
+      <p>평균 기온은 낮 최고와 밤 최저의 중간쯤입니다. 한낮은 이보다 덥고 아침저녁은 더 서늘합니다. 강수량이 많아도 짧게 쏟아지고 그치는 곳(동남아 우기)과 하루 종일 오는 곳이 있어, 비 오는 날의 느낌은 숫자만으로 다 알 수 없습니다.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@travel_junn_</dd>
+      <dt>기준일</dt><dd>2026.11.23</dd>
+      <dt>출처</dt><dd>일본 기상청, 대만 중앙기상서, 홍콩 천문대, 중국 기상국, 필리핀 기상청, 싱가포르 기상청, 미국 해양대기청, 프랑스 기상청의 월 평년값 (도시별 관측소는 본문 표, 2026.11.23 확인)</dd>
+    </dl>
+    <p class="foot-note">평년값은 과거 30년 평균이며 그해 날씨와 다를 수 있습니다. 출발 전 현지 기상 예보와 공식 안내를 확인하세요.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var DATA=[{"id":"tokyo","city":"도쿄","src":"일본 기상청(JMA)","stn":"도쿄","per":"1991–2020","t":[5.4,6.1,9.4,14.3,18.8,21.9,25.7,26.9,23.3,18.0,12.5,7.7],"p":[59.7,56.5,116.0,133.7,139.7,167.8,156.2,154.7,224.9,234.8,96.3,57.9]},{"id":"osaka","city":"오사카","src":"일본 기상청(JMA)","stn":"오사카","per":"1991–2020","t":[6.2,6.6,9.9,15.2,20.1,23.6,27.7,29.0,25.2,19.5,13.8,8.7],"p":[47.0,60.5,103.1,101.9,136.5,185.1,174.4,113.0,152.8,136.0,72.5,55.5]},{"id":"taipei","city":"타이베이","src":"대만 중앙기상서(CWA)","stn":"타이베이","per":"1991–2020","t":[16.4,16.9,18.8,22.3,25.6,28.2,29.9,29.5,27.7,24.6,21.9,18.2],"p":[90.5,143.2,157.2,152.5,239.9,345.0,226.1,337.8,315.2,150.2,83.2,88.7]},{"id":"hk","city":"홍콩","src":"홍콩 천문대(HKO)","stn":"천문대 본부","per":"1991–2020","t":[16.5,17.1,19.5,23.0,26.3,28.3,28.9,28.7,27.9,25.7,22.2,18.2],"p":[33.2,38.9,75.3,153.0,290.6,491.5,385.8,453.2,321.4,120.3,39.3,28.8]},{"id":"shanghai","city":"상하이","src":"중국 기상국(CMA)","stn":"상하이(민항)","per":"1991–2020","t":[4.9,6.6,10.4,15.8,20.9,24.4,28.8,28.5,24.7,19.5,13.7,7.3],"p":[70.4,65.4,95.4,82.5,93.2,207.3,148.0,187.1,118.1,68.4,59.4,50.3]},{"id":"bangkok","city":"방콕","src":"일본 기상청 세계 평년값(태국 기상청 보고 기반)","stn":"방콕(48455)","per":"확인 필요","t":[27.6,28.7,29.8,30.8,30.5,29.8,29.3,29.1,28.7,28.5,28.4,27.4],"p":[24.2,19.4,53.6,92.7,215.4,209.9,182.9,212.0,343.6,304.0,46.5,13.5]},{"id":"danang","city":"다낭","src":"일본 기상청 세계 평년값","stn":"다낭(48855)","per":"확인 필요","t":[21.7,22.6,24.4,26.6,28.8,30.0,29.4,29.3,27.9,26.3,24.9,22.4],"p":[99.8,16.5,34.4,55.0,53.3,55.2,99.8,143.1,410.4,692.5,471.2,210.2]},{"id":"cebu","city":"세부","src":"필리핀 기상청(PAGASA)","stn":"막탄 공항","per":"1991–2020","t":[26.8,27.0,27.8,28.8,29.4,28.9,28.3,28.5,28.4,28.2,28.0,27.4],"p":[135.1,88.9,60.9,55.6,94.4,180.7,210.6,157.9,190.4,207.6,131.0,171.9]},{"id":"sg","city":"싱가포르","src":"싱가포르 기상청(MSS)","stn":"창이","per":"1991–2020","t":[26.8,27.3,27.8,28.2,28.6,28.5,28.2,28.1,28.0,27.9,27.2,26.8],"p":[221.6,105.1,151.7,164.3,164.3,135.3,146.6,146.9,124.9,168.3,252.3,331.9]},{"id":"bali","city":"발리","src":"일본 기상청 세계 평년값","stn":"덴파사르 응우라라이(97230)","per":"확인 필요","t":[27.9,28.0,28.0,28.1,27.8,27.2,26.5,26.3,26.8,27.6,28.2,28.0],"p":[350.7,289.8,231.1,107.4,94.7,67.9,27.6,36.4,59.4,64.4,131.2,327.4]},{"id":"guam","city":"괌","src":"미국 해양대기청(NOAA) 기상청 월간 보고","stn":"괌 국제공항","per":"1991–2020","t":[27.0,26.9,27.4,28.1,28.4,28.6,28.1,27.7,27.6,27.8,28.0,null],"p":[136,105,70,89,113,165,311,449,385,323,211,null]},{"id":"paris","city":"파리","src":"프랑스 기상청(Météo-France)","stn":"파리 몽수리","per":"1991–2020","t":[5.4,6.0,9.2,12.2,15.6,18.8,20.9,20.8,17.2,13.2,8.7,5.9],"p":[47.6,41.8,45.2,45.8,69.0,51.3,59.4,58.0,44.7,55.2,54.3,62.0]}];
+  var $=function(id){return document.getElementById(id)};
+  var month=new Date().getMonth(), city=0;
+  var KEY='season-weather:v1';
+  try{var sv=JSON.parse(localStorage.getItem(KEY)||'null');if(sv){if(sv.m>=0&&sv.m<12)month=sv.m;if(sv.c>=0&&sv.c<DATA.length)city=sv.c}}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({m:month,c:city}))}catch(e){}}
+  var has=function(v){return v!==null&&v!==undefined};
+  var f1=function(v){return has(v)?v.toFixed(1):'확인 필요'};
+  var f0=function(v){return has(v)?Math.round(v).toLocaleString('ko-KR'):'확인 필요'};
+  function wear(t){return !has(t)?'':t<10?'겨울옷':t<18?'두꺼운 겉옷':t<24?'얇은 겉옷':'여름옷'}
+  function rain(p){return !has(p)?'':p>=200?'비 많음':p<50?'비 적음':''}
+  function tag(t,p){var w=wear(t),r=rain(p);return w+(r?'<small>'+r+'</small>':'')}
+
+  function bars(boxId,tipId,figId,list,val,unit,fmt,step,label){
+    var box=$(boxId), W=Math.max(280,box.clientWidth), rowH=30, labelW=72, valueW=52;
+    var top=4, H=top+list.length*rowH+22, plotW=W-labelW-valueW;
+    var mx=Math.max.apply(null,list.map(val)); if(step<0)step=mx>250?100:50; var max=Math.ceil(mx/step)*step||step;
+    var x=function(v){return labelW+v/max*plotW}, s='';
+    for(var t=0;t<=max;t+=step){
+      s+='<line class="c-grid" x1="'+x(t)+'" x2="'+x(t)+'" y1="'+top+'" y2="'+(H-22)+'"/>';
+      s+='<text x="'+x(t)+'" y="'+(H-6)+'" text-anchor="middle">'+t+'</text>';
+    }
+    list.forEach(function(d,i){
+      var y=top+i*rowH+5, h=rowH-10, v=val(d), w=Math.max(4,x(v)-labelW), r=Math.min(4,w);
+      s+='<g data-i="'+i+'"><rect class="c-hit" x="0" y="'+(y-5)+'" width="'+W+'" height="'+rowH+'"/>'
+        +'<path class="c-1" d="M'+labelW+' '+y+'h'+(w-r)+'a'+r+' '+r+' 0 0 1 '+r+' '+r+'v'+(h-2*r)+'a'+r+' '+r+' 0 0 1 -'+r+' '+r+'h-'+(w-r)+'z"/>'
+        +'<text class="c-label" x="'+(labelW-8)+'" y="'+(y+h/2+4.5)+'" text-anchor="end">'+d.city+'</text>'
+        +'<text class="c-value" x="'+(labelW+w+6)+'" y="'+(y+h/2+4.5)+'">'+fmt(v)+'</text></g>';
+    });
+    s+='<line class="c-axis" x1="'+labelW+'" x2="'+labelW+'" y1="'+top+'" y2="'+(H-22)+'"/>';
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="'+label+'">'+s+'</svg>';
+    var tip=$(tipId);
+    box.querySelectorAll('g[data-i]').forEach(function(g){
+      var d=list[+g.getAttribute('data-i')];
+      var show=function(){
+        tip.innerHTML='<b>'+d.city+' '+(month+1)+'월</b>기온 '+f1(d.t[month])+'°C · 강수 '+f0(d.p[month])+'mm';
+        tip.hidden=false;
+        var gb=g.getBoundingClientRect(), cb=$(figId).getBoundingClientRect();
+        tip.style.top=(gb.bottom-cb.top+2)+'px';
+        tip.style.left=Math.min(labelW,Math.max(0,cb.width-tip.offsetWidth))+'px';
+      };
+      g.addEventListener('pointerenter',show);g.addEventListener('click',show);
+      g.addEventListener('pointerleave',function(){tip.hidden=true});
+    });
+  }
+
+  function render(){
+    var m=month;
+    $('month').querySelectorAll('button').forEach(function(b,i){b.setAttribute('aria-pressed',i===m?'true':'false')});
+    var ok=DATA.filter(function(d){return has(d.t[m])&&has(d.p[m])});
+    var miss=DATA.filter(function(d){return !(has(d.t[m])&&has(d.p[m]))}).map(function(d){return d.city});
+    var byT=ok.slice().sort(function(a,b){return b.t[m]-a.t[m]});
+    var byP=ok.slice().sort(function(a,b){return a.p[m]-b.p[m]});
+    $('s-hot').textContent=byT[0].city;$('s-hot-n').textContent=f1(byT[0].t[m])+'°C';
+    $('s-cold').textContent=byT[byT.length-1].city;$('s-cold-n').textContent=f1(byT[byT.length-1].t[m])+'°C';
+    $('s-dry').textContent=byP[0].city;$('s-dry-n').textContent=f0(byP[0].p[m])+'mm';
+    $('s-wet').textContent=byP[byP.length-1].city;$('s-wet-n').textContent=f0(byP[byP.length-1].p[m])+'mm';
+    var extra=miss.length?' · 빠진 곳(이 달 값 확인 필요): '+miss.join('·'):'';
+    $('c1-title').textContent=(m+1)+'월 평균 기온';$('c2-title').textContent=(m+1)+'월 강수량';
+    $('c1-note').textContent='°C · 하루 평균 기온의 월 평년값 · 높은 순'+extra;
+    $('c2-note').textContent='mm · 한 달 강수량의 평년값 · 적은 순'+extra;
+    bars('svg1','tip1','chart1',byT,function(d){return d.t[m]},'°C',function(v){return v.toFixed(1)},10,(m+1)+'월 도시별 평균 기온 막대 차트');
+    bars('svg2','tip2','chart2',byP,function(d){return d.p[m]},'mm',function(v){return Math.round(v)},-1,(m+1)+'월 도시별 강수량 막대 차트');
+    $('t-eyebrow').textContent=(m+1)+'월 · 따뜻한 순';
+    $('rows').innerHTML=byT.concat(DATA.filter(function(d){return miss.indexOf(d.city)>=0})).map(function(d){
+      return '<tr><td>'+d.city+'</td><td class="num">'+f1(d.t[m])+'</td><td class="num">'+f0(d.p[m])+'</td><td>'+tag(d.t[m],d.p[m])+'</td></tr>';
+    }).join('');
+    var c=DATA[city];
+    $('city').querySelectorAll('button').forEach(function(b,i){b.setAttribute('aria-pressed',i===city?'true':'false')});
+    $('city-rows').innerHTML=c.t.map(function(t,i){
+      return '<tr'+(i===m?' class="is-key"':'')+'><td class="nowrap">'+(i+1)+'월</td><td class="num">'+f1(t)+'</td><td class="num">'+f0(c.p[i])+'</td><td>'+tag(t,c.p[i])+'</td></tr>';
+    }).join('');
+    $('city-src').textContent=c.city+': '+c.src+' · '+c.stn+' 관측소 · 기간 '+c.per+'. 굵은 줄이 위에서 고른 달입니다.';
+    save();
+  }
+  $('month').innerHTML=[1,2,3,4,5,6,7,8,9,10,11,12].map(function(i){return '<button type="button" aria-pressed="false">'+i+'월</button>'}).join('');
+  $('city').innerHTML=DATA.map(function(d){return '<button type="button" aria-pressed="false">'+d.city+'</button>'}).join('');
+  $('src-rows').innerHTML=DATA.map(function(d){return '<tr><td class="nowrap">'+d.city+'</td><td>'+d.src+'<small>'+d.stn+'</small></td><td class="nowrap">'+d.per+'</td></tr>'}).join('');
+  $('month').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;month=[].indexOf.call(this.children,b);render()});
+  $('city').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;city=[].indexOf.call(this.children,b);render()});
+  var timer;window.addEventListener('resize',function(){clearTimeout(timer);timer=setTimeout(render,120)});
+  render();
+})();
+</script>
+</body>
+</html>
