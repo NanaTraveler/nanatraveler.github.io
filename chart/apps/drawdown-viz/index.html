@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ko" data-account="chart">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>낙폭 체험기</title>
+<meta name="description" content="변동성을 고르면 가상 자산 곡선 10개와 최대 낙폭, 500번 모의실험 분포를 보여 주는 도구">
+<style>
+/* tokens:start */
+/* NanaTraveler design system v1.0 (2026-11-16)
+   원본은 이 파일 하나. 견본 HTML 안의 tokens:start ~ tokens:end 구간은 이 파일의 복사본이다.
+   고치려면 여기서 고치고 python3 shared/design/sync.py 를 돌린다.
+   구성: 색판 표지(계정색 한 면) + 중립 본문 + 선으로 나눈 격자. 장식 없음. */
+
+/* 1. 토큰 ------------------------------------------------------------ */
+:root{
+  /* 글꼴 */
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"D2Coding",monospace;
+
+  /* 글자 크기 단계 (이 8개만 쓴다) */
+  --t-12:12px; --t-13:13px; --t-15:15px; --t-16:16px; --t-18:18px; --t-22:22px; --t-28:28px; --t-40:40px;
+  --t-cover:clamp(32px,8.6vw,54px);
+  --lh-tight:1.2; --lh-head:1.35; --lh-body:1.7;
+
+  /* 간격 단계 (4의 배수) */
+  --s-1:4px; --s-2:8px; --s-3:12px; --s-4:16px; --s-5:24px; --s-6:32px; --s-7:48px; --s-8:72px;
+  --gutter:20px;
+  --wrap:720px;
+
+  /* 반경·그림자: 반경은 작게, 그림자는 떠 있는 것(툴팁)에만 */
+  --r-1:3px; --r-2:6px; --r-3:10px;
+  --shadow-pop:0 6px 20px rgba(15,18,22,.12);
+
+  /* 중립색 (라이트) */
+  --bg:#f4f5f6; --surface:#ffffff; --surface-2:#eaecee;
+  --ink:#14171a; --ink-2:#4d545c; --ink-3:#6b727b;
+  --line:#dfe2e6; --line-2:#c3c8ce;
+  --btn:#14171a; --on-btn:#ffffff;
+
+  /* 계정색 원재료: 계정이 없으면 먹색 */
+  --a-plate:#14171a;            /* 표지 면. 흰 글자와 4.5:1 이상 */
+  --a-ink-l:#14171a; --a-ink-d:#eceef1;      /* 본문 위 강조 글자·선 */
+  --a-soft-l:#eaecee; --a-soft-d:#22262b;    /* 옅은 강조 바탕 */
+  --a-chart-l:#4d545c; --a-chart-d:#a4abb4;  /* 차트 주 계열 */
+
+  /* 실제로 쓰는 강조 토큰 */
+  --accent:var(--a-plate); --on-accent:#ffffff; --on-accent-2:rgba(255,255,255,.86); --on-accent-line:rgba(255,255,255,.38);
+  --accent-ink:var(--a-ink-l);
+  --accent-soft:var(--a-soft-l);
+
+  /* 보조색 1개 (비교 대상·하락) */
+  --second:#2f6fd0;
+
+  /* 상태색: 계정색과 별개. 반드시 글자 표지와 함께 */
+  --good:#1a7a4c; --warn:#8f5500; --bad:#b3162f;
+  --good-soft:#e3f3ea; --warn-soft:#faefd9; --bad-soft:#fde9ec;
+
+  /* 차트 */
+  --chart-1:var(--a-chart-l); --chart-2:var(--second); --chart-mute:#aeb4bb;
+  --chart-grid:#e3e6e9; --chart-axis:#c3c8ce; --chart-text:#4d545c;
+  --up:#c41d37; --down:#2f6fd0;   /* 국내 관례: 상승 빨강, 하락 파랑 */
+}
+[data-account="edu"]{
+  --a-plate:#a86400; --a-ink-l:#8f5500; --a-ink-d:#f2b24a;
+  --a-soft-l:#f8eeda; --a-soft-d:#30240e; --a-chart-l:#a86400; --a-chart-d:#c28419;
+}
+[data-account="chart"]{
+  --a-plate:#c41d37; --a-ink-l:#b3162f; --a-ink-d:#ff7a8a;
+  --a-soft-l:#fceaed; --a-soft-d:#35181d; --a-chart-l:#c41d37; --a-chart-d:#e2586b;
+}
+[data-account="travel"]{
+  --a-plate:#00806a; --a-ink-l:#006b59; --a-ink-d:#45d1b0;
+  --a-soft-l:#e1f2ee; --a-soft-d:#0f2c27; --a-chart-l:#00806a; --a-chart-d:#22ab8c;
+}
+/* 다크: 아래 두 블록은 값이 같아야 한다 */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+    --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+    --line:#2a2f35; --line-2:#3d444c;
+    --btn:#eceef1; --on-btn:#14171a;
+    --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+    --second:#5a8ee6;
+    --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+    --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+    --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+    --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+    --up:#e2586b; --down:#5a8ee6;
+    --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+  }
+  :root:not([data-theme="light"]):not([data-account]){ --accent:#22262b; }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1113; --surface:#181b1f; --surface-2:#22262b;
+  --ink:#eceef1; --ink-2:#a4abb4; --ink-3:#8a929b;
+  --line:#2a2f35; --line-2:#3d444c;
+  --btn:#eceef1; --on-btn:#14171a;
+  --accent-ink:var(--a-ink-d); --accent-soft:var(--a-soft-d);
+  --second:#5a8ee6;
+  --good:#4cc38a; --warn:#f2b24a; --bad:#ff7a8a;
+  --good-soft:#12291d; --warn-soft:#30240e; --bad-soft:#35181d;
+  --chart-1:var(--a-chart-d); --chart-mute:#59616a;
+  --chart-grid:#262b30; --chart-axis:#3d444c; --chart-text:#a4abb4;
+  --up:#e2586b; --down:#5a8ee6;
+  --shadow-pop:0 6px 20px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"]:not([data-account]){ --accent:#22262b; }
+
+/* 2. 바탕 ------------------------------------------------------------ */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 var(--t-16)/var(--lh-body) var(--font);
+  word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.02em;line-height:var(--lh-head)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.num,table,input,output{font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--wrap);margin-inline:auto;
+  padding-left:max(var(--gutter),env(safe-area-inset-left,0px));
+  padding-right:max(var(--gutter),env(safe-area-inset-right,0px))}
+.stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.stack > *{min-width:0}
+
+/* 3. 표지 헤더: 세 견본 공통. 구조와 순서를 바꾸지 않는다 ------------- */
+.cover{background:var(--accent);color:var(--on-accent);
+  -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.cover-in{display:flex;flex-direction:column;padding-block:var(--s-5) var(--s-4)}
+.cover-top{display:flex;justify-content:space-between;align-items:center;gap:var(--s-3);font-size:var(--t-13);line-height:1.4}
+.cover-acct{display:flex;flex-wrap:wrap;gap:0 var(--s-2);min-width:0}
+.cover-acct b{font-weight:700}
+.cover-acct span{color:var(--on-accent-2)}
+.cover-kind{flex:none;border:1px solid var(--on-accent);border-radius:var(--r-1);padding:2px 8px;font-size:var(--t-12);font-weight:700;letter-spacing:.02em}
+.cover-title{margin-top:var(--s-8);font-size:var(--t-cover);font-weight:800;line-height:var(--lh-tight);letter-spacing:-.035em}
+.cover-desc{margin-top:var(--s-3);max-width:34em;font-size:var(--t-16);line-height:1.55;color:var(--on-accent-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-5);margin-top:var(--s-6);padding-top:var(--s-3);
+  border-top:1px solid var(--on-accent-line);font-size:var(--t-13);line-height:1.4}
+.cover-meta div{display:flex;gap:var(--s-2)}
+.cover-meta dt{color:var(--on-accent-2)}
+.cover-meta dd{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 4. 본문 구획 ------------------------------------------------------- */
+.main{padding-block:var(--s-6) var(--s-7);display:flex;flex-direction:column;gap:var(--s-7)}
+.sec{display:flex;flex-direction:column;gap:var(--s-4)}
+.sec > *{min-width:0}
+.eyebrow{font-size:var(--t-13);font-weight:700;color:var(--ink-3);letter-spacing:.01em}
+.sec-title{font-size:var(--t-22);font-weight:750}
+.sub-title{font-size:var(--t-18);font-weight:700}
+.lead{font-size:var(--t-18);line-height:1.6;color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:var(--t-13);line-height:1.55;color:var(--ink-2)}
+.rule{border:0;border-top:1px solid var(--line)}
+.rule--ink{border-top:2px solid var(--ink)}
+.link{color:var(--accent-ink);text-underline-offset:3px}
+
+/* 면: 입력 영역·결과 영역처럼 "따로 떨어진 물건"에만 쓴다 */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-3);padding:var(--s-4)}
+@media (min-width:720px){.panel{padding:var(--s-5)}}
+
+/* 5. 배지 ------------------------------------------------------------ */
+.badge{display:inline-flex;align-items:center;gap:var(--s-1);border:1px solid var(--line-2);border-radius:var(--r-1);
+  padding:1px 7px;font-size:var(--t-12);font-weight:700;line-height:1.6;color:var(--ink-2);white-space:nowrap}
+.badge--solid{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.badge--good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.badge--warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.badge--bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+
+/* 6. 버튼·입력 ------------------------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);min-height:48px;padding:0 var(--s-5);
+  border:1px solid var(--btn);border-radius:var(--r-2);background:var(--btn);color:var(--on-btn);
+  font:700 var(--t-16)/1 var(--font);text-decoration:none;cursor:pointer}
+.btn:hover{opacity:.88}
+.btn--accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn--ghost{background:transparent;border-color:var(--line-2);color:var(--ink)}
+.btn--block{width:100%}
+.fields{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+@media (min-width:560px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label,.field-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.field-box{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-2);background:var(--surface)}
+.field-box:focus-within{border-color:var(--accent-ink);box-shadow:0 0 0 1px var(--accent-ink)}
+.field-box input,.field-box select{flex:1;min-width:0;height:48px;padding:0 var(--s-3);border:0;background:transparent;color:var(--ink);
+  font:600 var(--t-18)/1 var(--font);outline:0}
+.field-box input{text-align:right}
+.field-box select{font-size:var(--t-16)}
+.field-unit{flex:none;padding-right:var(--s-3);font-size:var(--t-15);color:var(--ink-3)}
+.field-help{font-size:var(--t-12);color:var(--ink-3);line-height:1.5}
+/* 고르기(필터): 켜진 것은 먹색. 강조색을 쓰지 않는다 */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:36px;padding:0 var(--s-3);border:1px solid var(--line-2);border-radius:var(--r-2);background:transparent;color:var(--ink-2);
+  font:600 var(--t-15)/1 var(--font);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+
+/* 7. 숫자 타일: 둥근 카드 대신 선으로 나눈 격자 ----------------------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r-2);overflow:hidden}
+@media (min-width:720px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stats.stats--2{grid-template-columns:1fr 1fr}
+.stat{display:flex;flex-direction:column;gap:2px;min-width:0;padding:var(--s-3) var(--s-4);background:var(--surface)}
+.stat dt{font-size:var(--t-13);color:var(--ink-2)}
+.stat dd{font-size:var(--t-22);font-weight:750;letter-spacing:-.02em;line-height:1.3;font-variant-numeric:tabular-nums}
+.stat dd small{margin-left:2px;font-size:var(--t-13);font-weight:600;color:var(--ink-2);letter-spacing:0}
+.stat .stat-note{font-size:var(--t-12);color:var(--ink-3);line-height:1.4}
+/* 가장 중요한 결과 하나 */
+.key{display:flex;flex-direction:column;gap:2px}
+.key-label{font-size:var(--t-13);font-weight:700;color:var(--ink-2)}
+.key-value{font-size:var(--t-40);font-weight:800;letter-spacing:-.035em;line-height:1.15;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.key-value small{margin-left:4px;font-size:var(--t-18);font-weight:700;letter-spacing:0}
+
+/* 8. 표 -------------------------------------------------------------- */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:var(--t-15);line-height:1.45}
+th,td{padding:10px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font-size:var(--t-12);font-weight:700;color:var(--ink-2);border-bottom:1px solid var(--ink);white-space:nowrap;vertical-align:bottom}
+td.num,th.num{text-align:right;white-space:nowrap}
+td small{display:block;font-size:var(--t-12);color:var(--ink-3)}
+tr.is-key td{font-weight:700}
+.nowrap{white-space:nowrap}
+tfoot td{border-bottom:0;border-top:1px solid var(--ink);font-weight:700}
+/* 열이 5개를 넘는 표는 휴대폰에서 줄마다 묶음으로 바꾼다: td 에 data-label */
+@media (max-width:559px){
+  .table--stack thead{display:none}
+  .table--stack tr{display:grid;grid-template-columns:1fr 1fr;gap:2px var(--s-4);padding:var(--s-3) 0;border-bottom:1px solid var(--line)}
+  .table--stack td{padding:0;border:0;text-align:left}
+  .table--stack td:first-child{grid-column:1/-1;font-weight:700}
+  .table--stack td[data-label]::before{content:attr(data-label);display:block;font-size:var(--t-12);font-weight:400;color:var(--ink-3)}
+}
+
+/* 9. 인용·코드·콜아웃·체크리스트·목차 --------------------------------- */
+.quote{padding-left:var(--s-4);border-left:2px solid var(--ink);font-size:var(--t-18);font-weight:600;line-height:1.6}
+.quote cite{display:block;margin-top:var(--s-2);font-size:var(--t-13);font-weight:400;font-style:normal;color:var(--ink-2)}
+code{font-family:var(--mono);font-size:.9em;background:var(--surface-2);border-radius:var(--r-1);padding:1px 5px}
+pre.code{padding:var(--s-3) var(--s-4);background:var(--surface-2);border-radius:var(--r-2);
+  font:400 var(--t-15)/1.65 var(--mono);white-space:pre-wrap;word-break:break-word;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+pre.code code{background:none;padding:0;font-size:inherit}
+.callout{display:flex;flex-direction:column;gap:var(--s-1);padding:var(--s-3) var(--s-4);border:1px solid var(--line);border-radius:var(--r-2);background:var(--surface)}
+.callout-label{font-size:var(--t-12);font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.callout--accent{border-color:transparent;background:var(--accent-soft);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.callout--accent .callout-label{color:var(--accent-ink)}
+.callout--warn{border-color:transparent;background:var(--warn-soft)}
+.callout--warn .callout-label{color:var(--warn)}
+.check{display:flex;flex-direction:column}
+.check li{border-bottom:1px solid var(--line)}
+.check li:first-child{border-top:1px solid var(--ink)}
+.check label{display:flex;gap:var(--s-3);align-items:flex-start;padding:var(--s-3) 0;cursor:pointer}
+.check input{flex:none;width:20px;height:20px;margin:3px 0 0;accent-color:var(--ink)}
+.check small{display:block;font-size:var(--t-13);color:var(--ink-2)}
+.toc{counter-reset:toc;border-top:1px solid var(--ink)}
+.toc li{counter-increment:toc;border-bottom:1px solid var(--line)}
+.toc a{display:flex;gap:var(--s-3);align-items:baseline;padding:var(--s-3) 0;text-decoration:none;font-weight:600}
+.toc a::before{content:counter(toc,decimal-leading-zero);flex:none;width:1.8em;font-size:var(--t-13);font-weight:400;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.toc a span{margin-left:auto;flex:none;font-size:var(--t-13);font-weight:400;color:var(--ink-3)}
+.prose{display:flex;flex-direction:column;gap:var(--s-3)}
+.prose strong{font-weight:700}
+.bullets{display:flex;flex-direction:column;gap:6px;padding-left:1.1em;list-style:disc}
+.bullets li::marker{color:var(--ink-3)}
+
+/* 10. 차트 (인라인 SVG) ---------------------------------------------- */
+.chart{display:flex;flex-direction:column;gap:var(--s-2);position:relative}
+.chart-title{font-size:var(--t-15);font-weight:700}
+.chart-note{font-size:var(--t-12);color:var(--ink-3)}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font:400 12px var(--font);fill:var(--chart-text);font-variant-numeric:tabular-nums}
+.chart .c-label{font-size:13px;fill:var(--ink)}
+.chart .c-value{font-weight:700;fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:4px;stroke-linejoin:round}
+.chart .c-grid{stroke:var(--chart-grid);stroke-width:1}
+.chart .c-axis{stroke:var(--chart-axis);stroke-width:1}
+.chart .c-1{fill:var(--chart-1)} .chart .c-2{fill:var(--chart-2)} .chart .c-mute{fill:var(--chart-mute)}
+.chart .c-line-1{fill:none;stroke:var(--chart-1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-line-2{fill:none;stroke:var(--chart-2);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .c-hit{fill:transparent;cursor:default}
+.chart .c-hit:hover + .c-1,.chart g:hover > .c-1{opacity:.82}
+.legend{display:flex;flex-wrap:wrap;gap:var(--s-1) var(--s-4);font-size:var(--t-13);color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px;background:var(--chart-1)}
+.legend .l-2{background:var(--chart-2)} .legend .l-mute{background:var(--chart-mute)}
+.tip{position:absolute;z-index:5;pointer-events:none;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-2);
+  background:var(--surface);box-shadow:var(--shadow-pop);font-size:var(--t-13);line-height:1.45;white-space:nowrap}
+.tip b{display:block}
+
+/* 11. 하단 정보: 세 견본 공통. 항목 다섯 개를 모두 채운다 --------------- */
+.foot{border-top:2px solid var(--ink);padding-block:var(--s-5) var(--s-7);font-size:var(--t-13);line-height:1.55}
+.foot .wrap{display:flex;flex-direction:column;gap:var(--s-4)}
+.foot-grid{display:grid;grid-template-columns:4.5em 1fr;gap:6px var(--s-3)}
+.foot-grid dt{color:var(--ink-3)}
+.foot-grid dd{min-width:0;font-variant-numeric:tabular-nums}
+.foot-note{color:var(--ink-2)}
+.foot-home{align-self:flex-start;font-weight:700;text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:1px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* tokens:end */
+
+/* 이 파일만의 배치: 아래만 고친다 */
+.app-grid{display:grid;gap:var(--s-4);grid-template-columns:1fr}
+.app-grid > *{min-width:0}
+@media (min-width:900px){
+  :root{--wrap:960px}
+  .app-grid{grid-template-columns:5fr 6fr;gap:var(--s-5);align-items:start}
+}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-bottom:var(--s-4)}
+.panel-head--flush{margin-bottom:0}
+.panel-head h2{font-size:var(--t-18);font-weight:700}
+.result{display:flex;flex-direction:column;gap:var(--s-4)}
+.actions{display:flex;gap:var(--s-2);margin-top:var(--s-4)}
+.actions .btn{flex:1}
+.q{display:flex;flex-direction:column;gap:6px}
+.q + .q{margin-top:var(--s-4)}
+.fields{margin-top:var(--s-4)}
+
+</style>
+</head>
+<body>
+
+<header class="cover">
+  <div class="wrap cover-in">
+    <div class="cover-top">
+      <p class="cover-acct"><b>@chart_nana_</b><span>차트 · 리스크 관리</span></p>
+      <p class="cover-kind">웹앱</p>
+    </div>
+    <h1 class="cover-title">낙폭 체험기</h1>
+    <p class="cover-desc">흔들림 크기를 고르면 가상 자산 곡선과 최대 낙폭을 봅니다.</p>
+    <dl class="cover-meta">
+      <div><dt>기준일</dt><dd>2026.11.23</dd></div>
+      <div><dt>구분</dt><dd>무료 자료</dd></div>
+    </dl>
+  </div>
+</header>
+
+<main class="wrap main">
+  <div class="app-grid">
+
+    <section class="panel" aria-labelledby="in-title">
+      <div class="panel-head">
+        <h2 id="in-title">가정 고르기</h2>
+        <span class="badge">가상 데이터</span>
+      </div>
+      <form id="calc" novalidate>
+        <div class="q">
+          <span class="field-label">연 변동성 (1년 동안 흔들리는 크기)</span>
+          <div class="seg" data-k="vol">
+            <button type="button" data-v="10" aria-pressed="false">10%</button>
+            <button type="button" data-v="20" aria-pressed="true">20%</button>
+            <button type="button" data-v="35" aria-pressed="false">35%</button>
+            <button type="button" data-v="60" aria-pressed="false">60%</button>
+          </div>
+          <p class="field-help">숫자가 클수록 하루하루 오르내림이 큽니다. 실제 자산의 변동성은 시기마다 달라집니다.</p>
+        </div>
+        <div class="q">
+          <span class="field-label">기간</span>
+          <div class="seg" data-k="years">
+            <button type="button" data-v="1" aria-pressed="false">1년</button>
+            <button type="button" data-v="3" aria-pressed="true">3년</button>
+            <button type="button" data-v="5" aria-pressed="false">5년</button>
+          </div>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label for="f-mu">가정 연 수익률</label>
+            <div class="field-box"><input id="f-mu" inputmode="decimal" value="7"><span class="field-unit">%</span></div>
+            <p class="field-help">가정일 뿐입니다. 0이나 음수도 넣을 수 있습니다.</p>
+          </div>
+        </div>
+      </form>
+      <div class="actions">
+        <button class="btn btn--accent" type="button" id="redraw">새로 그리기</button>
+        <button class="btn btn--ghost" type="button" id="reset">처음 값으로</button>
+      </div>
+    </section>
+
+    <section class="panel result" aria-labelledby="out-title" aria-live="polite">
+      <div class="panel-head panel-head--flush">
+        <h2 id="out-title">곡선 10개 결과</h2>
+        <span class="badge" id="out-seed">묶음 1</span>
+      </div>
+      <div class="key">
+        <span class="key-label">10개 중 가장 깊은 최대 낙폭</span>
+        <output class="key-value" id="o-worst">-</output>
+      </div>
+      <dl class="stats stats--2">
+        <div class="stat"><dt>낙폭 중간값</dt><dd id="o-med">-</dd></div>
+        <div class="stat"><dt>가장 얕은 낙폭</dt><dd id="o-best">-</dd></div>
+        <div class="stat"><dt>끝에서 손실인 곡선</dt><dd id="o-loss">-</dd></div>
+        <div class="stat"><dt>가장 깊은 낙폭 회복에 필요한 상승</dt><dd id="o-back">-</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <section class="sec" aria-labelledby="c-title">
+    <figure class="chart" id="chart">
+      <figcaption>
+        <p class="chart-title" id="c-title">가상 자산 곡선 10개</p>
+        <p class="chart-note" id="c-note">처음 100에서 시작 · 가로는 거래일 · 진한 선이 최대 낙폭이 가장 깊은 곡선</p>
+      </figcaption>
+      <div class="legend"><span><i></i>낙폭이 가장 깊은 곡선</span><span><i class="l-mute"></i>나머지 9개</span></div>
+      <div id="chart-svg"></div>
+      <div class="tip" id="tip" hidden></div>
+    </figure>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>곡선</th><th class="num">끝 값</th><th class="num">최대 낙폭</th><th class="num">고점 회복</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="small">끝 값은 처음 100 기준. 고점 회복은 최대 낙폭이 시작된 고점을 다시 넘을 때까지 걸린 거래일(1년 252일)이고, 기간 안에 못 넘으면 '못 넘음'입니다.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="dist-title">
+    <div>
+      <p class="eyebrow" id="dist-eyebrow">같은 가정으로 500번</p>
+      <h2 class="sec-title" id="dist-title">최대 낙폭이 이만큼 이상일 확률</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>최대 낙폭</th><th class="num">확률</th><th class="num">회복에 필요한 상승</th></tr></thead>
+        <tbody id="dist"></tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <span class="callout-label">읽는 법</span>
+      <p>가정 수익률이 플러스여도 중간에 크게 깨지는 곡선이 섞여 나옵니다. 내가 버틸 수 있는 낙폭을 먼저 정하고, 그보다 깊은 낙폭이 자주 나오는 변동성이면 비중을 줄이는 쪽으로 생각해 볼 수 있습니다.</p>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="how-title">
+    <div>
+      <p class="eyebrow">계산 방법</p>
+      <h2 class="sec-title" id="how-title">어떻게 만든 곡선인가</h2>
+    </div>
+    <div class="prose">
+      <p>하루 수익률을 정규분포에서 뽑아 252거래일을 1년으로 이어 붙였습니다(기하 브라운 운동). 실제 시장은 급락이 이 모형보다 자주 나오고 변동성도 시기마다 바뀌므로, 실제 낙폭은 여기 나온 값보다 깊을 수 있습니다.</p>
+      <p><strong>최대 낙폭</strong> = 지나온 최고점에서 이후 가장 낮은 값까지 떨어진 비율. <strong>회복에 필요한 상승</strong> = 1 ÷ (1 − 낙폭) − 1. 예: 20% 하락은 25%, 50% 하락은 100% 올라야 제자리입니다.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <dl class="foot-grid">
+      <dt>계정</dt><dd>@chart_nana_</dd>
+      <dt>기준일</dt><dd>2026.11.23</dd>
+      <dt>출처</dt><dd>직접 만든 모의실험 (난수로 만든 가상 데이터, 실제 종목·지수 아님)</dd>
+    </dl>
+    <p class="foot-note">투자 조언이 아닙니다. 가상 데이터로 흔들림의 크기를 체험하는 도구이며 수익을 보장하거나 미래를 예측하지 않습니다.</p>
+    <a class="foot-home" href="https://nanatraveler.github.io/">nanatraveler.github.io 다른 무료 자료 보기</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var st={vol:20,years:3}, seed=1, DAYS=252, paths=[];
+  function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  function gauss(r){var u=0,v=0;while(u===0)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  function mu(){var v=parseFloat(String($('f-mu').value).replace(/[^0-9.\-]/g,''));return isNaN(v)?0:v/100}
+  function sim(r,n,m,s){
+    var dr=(m-s*s/2)/DAYS, ds=s/Math.sqrt(DAYS), v=100, peak=100, mdd=0, pk=0, ddStart=0, a=[100];
+    for(var i=1;i<=n;i++){v*=Math.exp(dr+ds*gauss(r));a.push(v);if(v>peak){peak=v;pk=i}var d=1-v/peak;if(d>mdd){mdd=d;ddStart=pk}}
+    var rec=-1,pv=a[ddStart],j;
+    var low=ddStart,lv=pv;for(j=ddStart;j<a.length;j++){if(a[j]<lv){lv=a[j];low=j}}
+    for(j=low;j<a.length;j++){if(a[j]>=pv){rec=j-ddStart;break}}
+    return {a:a,mdd:mdd,end:v,rec:rec,peakI:ddStart,lowI:low};
+  }
+  var pct=function(x){return (x*100).toFixed(1)};
+  var back=function(d){return d>=1?Infinity:(1/(1-d)-1)};
+  function seg(){document.querySelectorAll('.seg[data-k]').forEach(function(g){g.querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',+b.dataset.v===st[g.dataset.k]?'true':'false')})})}
+  function run(){
+    seg();
+    var n=st.years*DAYS, s=st.vol/100, m=mu(), r=rng(seed*7919+st.vol*31+st.years);
+    paths=[];for(var k=0;k<10;k++)paths.push(sim(r,n,m,s));
+    var dd=paths.map(function(p){return p.mdd}).sort(function(a,b){return a-b});
+    var wi=0;paths.forEach(function(p,i){if(p.mdd>paths[wi].mdd)wi=i});
+    var w=paths[wi];
+    $('out-seed').textContent='묶음 '+seed;
+    $('o-worst').innerHTML='-'+pct(w.mdd)+'<small>%</small>';
+    $('o-med').innerHTML='-'+pct((dd[4]+dd[5])/2)+'<small>%</small>';
+    $('o-best').innerHTML='-'+pct(dd[0])+'<small>%</small>';
+    $('o-loss').innerHTML=paths.filter(function(p){return p.end<100}).length+'<small>/ 10개</small>';
+    $('o-back').innerHTML='+'+pct(back(w.mdd))+'<small>%</small>';
+    $('rows').innerHTML=paths.map(function(p,i){return '<tr'+(i===wi?' class="is-key"':'')+'><td class="nowrap">'+(i+1)+'번</td><td class="num">'+p.end.toFixed(1)+'</td><td class="num">-'+pct(p.mdd)+'%</td><td class="num">'+(p.rec<0?'못 넘음':p.rec+'일')+'</td></tr>'}).join('');
+    $('c-note').textContent='처음 100에서 시작 · 가로는 거래일('+st.years+'년 = '+n+'일) · 연 변동성 '+st.vol+'% · 가정 연 수익률 '+(m*100).toFixed(1)+'%';
+    draw(wi);
+    var r2=rng(seed*104729+st.vol*17+st.years*3), cnt={10:0,20:0,30:0,40:0,50:0};
+    for(var t=0;t<500;t++){var q=sim(r2,n,m,s).mdd;for(var c in cnt)if(q>=c/100)cnt[c]++}
+    $('dist-eyebrow').textContent='같은 가정(변동성 '+st.vol+'% · '+st.years+'년)으로 500번';
+    $('dist').innerHTML=[10,20,30,40,50].map(function(c){return '<tr><td class="nowrap">-'+c+'% 이상</td><td class="num">'+(cnt[c]/5).toFixed(1)+'%</td><td class="num">+'+pct(back(c/100))+'%</td></tr>'}).join('');
+  }
+  function draw(wi){
+    var box=$('chart-svg'), W=Math.max(280,box.clientWidth), H=240, L=40, R=8, T=8, B=24, n=paths[0].a.length-1;
+    var mx=0,mn=1e9;paths.forEach(function(p){p.a.forEach(function(v){if(v>mx)mx=v;if(v<mn)mn=v})});
+    var step=mx-mn>200?100:mx-mn>80?50:20, lo=Math.floor(mn/step)*step, hi=Math.ceil(mx/step)*step;
+    lo=Math.max(0,lo);
+    var x=function(i){return L+i/n*(W-L-R)}, y=function(v){return T+(hi-v)/(hi-lo)*(H-T-B)}, s='';
+    for(var g=lo;g<=hi;g+=step){s+='<line class="c-grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(g)+'" y2="'+y(g)+'"/><text x="'+(L-6)+'" y="'+(y(g)+4)+'" text-anchor="end">'+g+'</text>'}
+    for(var yr=0;yr<=st.years;yr++){var xi=yr*DAYS;s+='<text x="'+x(xi)+'" y="'+(H-6)+'" text-anchor="'+(yr===0?'start':yr===st.years?'end':'middle')+'">'+(yr===0?'시작':yr+'년')+'</text>'}
+    s+='<line class="c-axis" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(100)+'" y2="'+y(100)+'" stroke-dasharray="3 3"/>';
+    var every=Math.max(1,Math.round(n/((W-L-R)*1.5)));
+    function line(p){var d='';for(var i=0;i<=n;i+=every)d+=(i?'L':'M')+x(i).toFixed(1)+' '+y(p.a[i]).toFixed(1);d+='L'+x(n).toFixed(1)+' '+y(p.a[n]).toFixed(1);return d}
+    paths.forEach(function(p,i){if(i!==wi)s+='<path d="'+line(p)+'" fill="none" stroke="var(--chart-mute)" stroke-width="1"/>'});
+    var w=paths[wi];
+    s+='<path class="c-line-1" d="'+line(w)+'"/>';
+    s+='<circle cx="'+x(w.peakI)+'" cy="'+y(w.a[w.peakI])+'" r="4" class="c-1"/><circle cx="'+x(w.lowI)+'" cy="'+y(w.a[w.lowI])+'" r="4" class="c-1"/>';
+    s+='<text class="c-value" x="'+Math.min(W-R-40,x(w.lowI)+6)+'" y="'+Math.min(H-B-4,y(w.a[w.lowI])+16)+'">-'+pct(w.mdd)+'%</text>';
+    s+='<rect class="c-hit" id="hit" x="'+L+'" y="'+T+'" width="'+(W-L-R)+'" height="'+(H-T-B)+'"/>';
+    box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="가상 자산 곡선 10개 선 차트">'+s+'</svg>';
+    var tip=$('tip'), hit=box.querySelector('#hit');
+    function show(e){var rb=hit.getBoundingClientRect(),cb=$('chart').getBoundingClientRect();var i=Math.round((e.clientX-rb.left)/rb.width*n);i=Math.max(0,Math.min(n,i));
+      tip.innerHTML='<b>'+i+'거래일째</b>진한 곡선 '+w.a[i].toFixed(1)+' · 고점 대비 -'+pct(1-w.a[i]/Math.max.apply(null,w.a.slice(0,i+1)))+'%';tip.hidden=false;
+      tip.style.top=(rb.top-cb.top+4)+'px';tip.style.left=Math.max(0,Math.min(cb.width-tip.offsetWidth,e.clientX-cb.left-tip.offsetWidth/2))+'px'}
+    hit.addEventListener('pointermove',show);hit.addEventListener('click',show);hit.addEventListener('pointerleave',function(){tip.hidden=true});
+  }
+  document.querySelectorAll('.seg[data-k]').forEach(function(g){g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;st[g.dataset.k]=+b.dataset.v;run()})});
+  $('f-mu').addEventListener('input',run);
+  $('calc').addEventListener('submit',function(e){e.preventDefault();run()});
+  $('redraw').addEventListener('click',function(){seed++;run()});
+  $('reset').addEventListener('click',function(){st={vol:20,years:3};seed=1;$('f-mu').value='7';run()});
+  var tm;window.addEventListener('resize',function(){clearTimeout(tm);tm=setTimeout(function(){var wi=0;paths.forEach(function(p,i){if(p.mdd>paths[wi].mdd)wi=i});draw(wi)},120)});
+  run();
+})();
+</script>
+</body>
+</html>
